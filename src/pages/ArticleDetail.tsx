@@ -13,7 +13,7 @@ interface Article {
 export const articleData: Article[] = [
   {
     id: "1",
-    image: "/public/assets/images/articles/article1.png",
+    image: "/assets/images/articles/article1.png",
     title:
       "Semarak Ramadhan 1446 H, MTT Sumbagsel Distribusikan 50 Paket Sembako untuk Warga Pra Sejahtera di Palembang",
     news: `
@@ -29,7 +29,7 @@ export const articleData: Article[] = [
   },
   {
     id: "2",
-    image: "/public/assets/images/articles/article2.png",
+    image: "/assets/images/articles/article2.png",
     title:
       "MTT Sulawesi dan IZI Sulses Luncurkan Program Lapak Berkah untuk Pelaku Usaha Kecil di Kabupaten Bone",
     news: `BONE– Majelis Telkomsel Taqwa (MTT) Sulawesi bersama Inisiatif Zakat Indonesia (IZI) Sulawesi Selatan (Sulsel) meluncurkan Program Lapak Berkah di Kabupaten Bone, Rabu, (26/02/2025). Program ini bertujuan untuk membantu lima pelaku usaha kecil dengan memberikan dukungan modal dan fasilitas usaha guna meningkatkan kemandirian ekonomi mereka.<br/>
@@ -42,7 +42,7 @@ export const articleData: Article[] = [
   },
   {
     id: "3",
-    image: "/public/assets/images/articles/article3.png",
+    image: "/assets/images/articles/article3.png",
     title:
       "MTT Jatim dan Telkomsel Berkolaborasi Sediakan Menu Buka Puasa untuk Karyawan",
     news: `SURABAYA-  Menyemarakkan Bulan suci Ramadhan, Majelis Telkomsel Taqwa (MTT) Jawa Timur bekerja sama dengan Telkomsel terus menghadirkan program berbuka puasa bersama bagi karyawan di area kantor Telkomsel, termasuk karyawan organik, outsourcing, dan vendor. Program ini menggunakan dana yang diambil dari dana sedekah yang dihimpun MTT Jatim  dan dana dari Corporate Social Responsibility (CSR) Telkomsel. <br/>
@@ -53,7 +53,7 @@ export const articleData: Article[] = [
   },
   {
     id: "4",
-    image: "/public/assets/images/articles/article4.png",
+    image: "/assets/images/articles/article4.png",
     title:
       "Semarak Ramadhan 1446 H, MTT Sumbagsel Distribusikan 50 Paket Sembako untuk Warga Pra Sejahtera di Palembang",
     news: `PALEMBANG– Majelis Telkomsel Taqwa (MTT) Sumatera Bagian Selatan (Sumbagsel) kembali menggelar program berbagi Paket Ramadhan kepada warga pra-sejahtera di sekitar Kantor Telkomsel Smart Office (TSO) Sriwijaya Palembang. Program ini bekerja sama dengan Inisiatif Zakat Indonesia (IZI) Sumatera Selatan (Sumsel), dengan total 50 paket sembako disalurkan kepada penerima manfaat di Masjid TSO Sriwijaya Darussalam Palembang, Rabu sore, (12/03/2025).<br/>
@@ -67,7 +67,7 @@ export const articleData: Article[] = [
   },
   {
     id: "5",
-    image: "/public/assets/images/articles/article5.png",
+    image: "/assets/images/articles/article5.png",
     title:
       "Semarak Ramadhan 1446 H, MTT Sumbagsel Distribusikan 50 Paket Sembako untuk Warga Pra Sejahtera di Palembang",
     news: `PALEMBANG– Majelis Telkomsel Taqwa (MTT) Sumatera Bagian Selatan (Sumbagsel) kembali menggelar program berbagi Paket Ramadhan kepada warga pra-sejahtera di sekitar Kantor Telkomsel Smart Office (TSO) Sriwijaya Palembang. Program ini bekerja sama dengan Inisiatif Zakat Indonesia (IZI) Sumatera Selatan (Sumsel), dengan total 50 paket sembako disalurkan kepada penerima manfaat di Masjid TSO Sriwijaya Darussalam Palembang, Rabu sore, (12/03/2025).<br/>
