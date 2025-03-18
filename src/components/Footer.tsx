@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="col-span-2">
             <div className="bg-white w-[151px] mb-2">
               <Link to="/" className="text-2xl font-bold text-primary bg-white">
-                <img className="w-[150px]" src="/src/assets/logo/logo.png" />
+                <img className="w-[150px]" src="/public/assets/logo/logo.png" />
               </Link>
             </div>
             <p className="text-gray-400 mb-4">

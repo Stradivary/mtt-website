@@ -55,7 +55,7 @@ const Home = () => {
             </div>
             <div className="hidden lg:block">
               <img
-                src="/src/assets/images/header.png"
+                src="/public/assets/images/header.png"
                 alt="Digital Experience"
                 className="rounded-lg shadow-2xl"
               />
@@ -79,7 +79,7 @@ const Home = () => {
             <img
               key={index}
               className="w-[159px] h-auto object-contain"
-              src={`/src/assets/images/company/${image}`}
+              src={`/public/assets/images/company/${image}`}
               alt={`Company logo ${index + 1}`}
             />
           ))}
