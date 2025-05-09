@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 const navLinks = [
   { path: "/", label: "Home" },
   { path: "/articles", label: "Articles" },
+  { path: "/service", label: "Service" },
   { path: "/contact", label: "Contact Us" },
 ];
 
@@ -66,6 +67,13 @@ const Navbar = () => {
                 onClick={() => setIsOpen(false)}
               >
                 Articles
+              </Link>
+              <Link
+                to="/service"
+                className="block px-3 py-2 bg-primary text-white rounded-full text-center hover:bg-[#009E47] transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Service
               </Link>
               <Link
                 to="/contact"
