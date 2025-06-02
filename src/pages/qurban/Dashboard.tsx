@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Users, MapPin, TrendingUp, Clock, RefreshCw, Database, Filter, Calendar, Download } from 'lucide-react';
+import { ArrowLeft, Users, MapPin, TrendingUp, Clock, RefreshCw, Filter, Calendar, Download } from 'lucide-react';
 import EnhancedStatsCards from '../../components/qurban/EnhancedStatsCards';
-import AdvancedIndonesiaMap from '../../components/qurban/AdvancedIndonesiaMap';
-import AnalyticsCharts from '../../components/qurban/AnalyticsCharts';
-import RecentActivityFeed from '../../components/qurban/RecentActivityFeed';
+import InteractiveIndonesiaMap from '../../components/qurban/InteractiveIndonesiaMap';
 import SupabaseTest from '../../components/qurban/SupabaseTest';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
@@ -135,14 +133,6 @@ const Dashboard = () => {
               </button>
 
               <button
-                onClick={() => setShowSupabaseTest(true)}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <Database className="w-4 h-4" />
-                <span>Test DB</span>
-              </button>
-              
-              <button
                 onClick={handleRefresh}
                 disabled={loading}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
@@ -250,20 +240,20 @@ const Dashboard = () => {
 
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Advanced Map */}
+          {/* Left Column - Interactive Map */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center">
                   <MapPin className="w-5 h-5 mr-2 text-blue-500" />
-                  Peta Distribusi Indonesia (Advanced)
+                  Peta Distribusi Indonesia (Interactive)
                 </h2>
                 <div className="text-sm text-gray-500">
-                  Interactive map dengan filter real-time
+                  Fully interactive map dengan zoom & pan controls
                 </div>
               </div>
               
-              <AdvancedIndonesiaMap 
+              <InteractiveIndonesiaMap 
                 data={kabupatenData} 
                 loading={loading}
                 onKabupatenClick={(kabupaten) => {
@@ -271,71 +261,41 @@ const Dashboard = () => {
                 }}
               />
             </div>
-
-            {/* Charts */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-                Analisis Data & Tren
-              </h2>
-              
-              <AnalyticsCharts 
-                chartData={chartData} 
-                loading={loading}
-              />
-            </div>
           </div>
 
-          {/* Right Column - Activity Feed */}
+          {/* Right Column - Placeholder untuk Analytics */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <Users className="w-5 h-5 mr-2 text-purple-500" />
-                Aktivitas Terkini
+                <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+                Analytics Coming Soon
               </h2>
               
-              <RecentActivityFeed 
-                activities={recentActivities} 
-                loading={loading}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Enhanced Footer Info - Single Section Only */}
-        <div className="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Ringkasan Program Qurban 1446H</h3>
-            <p className="text-sm text-gray-600">Update real-time distribusi qurban MTT</p>
-          </div>
-          <div className="grid md:grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {stats?.kabupaten_coverage || 20}
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">📊 Charts & Analytics</h3>
+                  <p className="text-sm text-gray-600">
+                    Advanced analytics charts akan ditambahkan setelah database setup selesai.
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">🔄 Recent Activities</h3>
+                  <p className="text-sm text-gray-600">
+                    Real-time activity feed dari upload dan distribusi data.
+                  </p>
+                </div>
+                
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h3 className="font-medium text-blue-900 mb-2">🚀 Next Steps</h3>
+                  <ol className="text-sm text-blue-700 space-y-1">
+                    <li>1. Setup database tables di Supabase</li>
+                    <li>2. Upload sample data</li>
+                    <li>3. Test dashboard dengan real data</li>
+                    <li>4. Add charts & analytics</li>
+                  </ol>
+                </div>
               </div>
-              <div className="text-sm text-gray-600">Kabupaten Terjangkau</div>
-              <div className="text-xs text-gray-500 mt-1">dari 514 total</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats?.total_hewan || 521}
-              </div>
-              <div className="text-sm text-gray-600">Total Hewan Qurban</div>
-              <div className="text-xs text-gray-500 mt-1">sapi, kambing, domba</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
-                {stats?.total_penerima?.toLocaleString('id-ID') || '5,625'}
-              </div>
-              <div className="text-sm text-gray-600">Keluarga Penerima</div>
-              <div className="text-xs text-gray-500 mt-1">verified beneficiaries</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                Rp 2.8B
-              </div>
-              <div className="text-sm text-gray-600">Total Nilai Qurban</div>
-              <div className="text-xs text-gray-500 mt-1">dalam rupiah</div>
             </div>
           </div>
         </div>

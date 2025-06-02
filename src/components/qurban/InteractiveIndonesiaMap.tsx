@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
-import { Users, Heart, ChevronDown, ChevronUp, Filter, MapPin } from 'lucide-react';
+import { Users, Target, ChevronDown, ChevronUp, Filter, MapPin, ZoomIn, ZoomOut, Home, Move, RotateCcw } from 'lucide-react';
 import { KabupatenData } from '../../types/qurban';
 
-interface AdvancedIndonesiaMapProps {
+interface InteractiveIndonesiaMapProps {
   data: KabupatenData[] | null;
   loading: boolean;
   onKabupatenClick?: (kabupaten: KabupatenData) => void;
@@ -32,17 +32,29 @@ const provinceMarkers = [
   { name: 'Riau', coordinates: [101.447777, 0.507068], penerima: 180, hewan: 35, mitra: ['BAZNAS'] }
 ];
 
-const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loading, onKabupatenClick }) => {
+const InteractiveIndonesiaMap: React.FC<InteractiveIndonesiaMapProps> = ({ data, loading, onKabupatenClick }) => {
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [geoData, setGeoData] = useState(null);
+  const [mapError, setMapError] = useState(false);
+  
+  // Interactive map controls state
+  const [zoom, setZoom] = useState(1);
+  const [center, setCenter] = useState<[number, number]>([118, -1.5]);
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastMousePosition, setLastMousePosition] = useState<{x: number, y: number} | null>(null);
+  
+  const mapRef = useRef<HTMLDivElement>(null);
+
   const [filters, setFilters] = useState({
     minPenerima: 0,
     maxPenerima: 2000,
     mitra: 'all',
-    hewan: 'all'
+    hewan: 'all',
+    showLabels: true,
+    showMarkers: true
   });
-  const [geoData, setGeoData] = useState(null);
-  const [mapError, setMapError] = useState(false);
 
   // Load Indonesia geographical data
   useEffect(() => {
@@ -91,6 +103,59 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
     return true;
   });
 
+  // Interactive controls functions
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev * 1.5, 8));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev / 1.5, 0.5));
+  };
+
+  const handleResetView = () => {
+    setZoom(1);
+    setCenter([118, -1.5]);
+    setSelectedProvince(null);
+  };
+
+  const handleCenterChange = (newCenter: [number, number]) => {
+    setCenter(newCenter);
+  };
+
+  // Mouse interaction handlers
+  const handleMouseDown = (event: React.MouseEvent) => {
+    setIsPanning(true);
+    setLastMousePosition({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleMouseMove = (event: React.MouseEvent) => {
+    if (!isPanning || !lastMousePosition) return;
+    
+    const deltaX = event.clientX - lastMousePosition.x;
+    const deltaY = event.clientY - lastMousePosition.y;
+    
+    // Adjust center based on mouse movement
+    const sensitivity = 0.001 / zoom;
+    setCenter(prev => [
+      prev[0] - deltaX * sensitivity,
+      prev[1] + deltaY * sensitivity
+    ]);
+    
+    setLastMousePosition({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+    setLastMousePosition(null);
+  };
+
+  // Wheel zoom handler
+  const handleWheel = (event: React.WheelEvent) => {
+    event.preventDefault();
+    const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(prev => Math.max(0.5, Math.min(8, prev * zoomFactor)));
+  };
+
   const getTotalStats = () => {
     const filtered = filteredMarkers;
     return {
@@ -103,10 +168,12 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
   const stats = getTotalStats();
 
   const getMarkerSize = (penerima: number) => {
-    if (penerima > 1000) return 8;
-    if (penerima > 500) return 6;
-    if (penerima > 200) return 4;
-    return 3;
+    const baseSize = 4;
+    const scaleFactor = zoom * 0.8;
+    if (penerima > 1000) return baseSize * 2 * scaleFactor;
+    if (penerima > 500) return baseSize * 1.5 * scaleFactor;
+    if (penerima > 200) return baseSize * 1.2 * scaleFactor;
+    return baseSize * scaleFactor;
   };
 
   const getMarkerColor = (penerima: number) => {
@@ -141,8 +208,8 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
 
   return (
     <div className="w-full">
-      {/* Filter Controls */}
-      <div className="mb-4">
+      {/* Enhanced Controls */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <button
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
@@ -152,57 +219,98 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
           {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         
-        {showFilters && (
-          <div className="mt-3 p-4 bg-gray-50 rounded-lg grid md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Penerima</label>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowControls(!showControls)}
+            className="text-gray-600 hover:text-gray-800 text-sm"
+          >
+            {showControls ? 'Sembunyikan' : 'Tampilkan'} Kontrol
+          </button>
+        </div>
+      </div>
+      
+      {/* Advanced Filter Panel */}
+      {showFilters && (
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg grid lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Min Penerima</label>
+            <input
+              type="range"
+              min="0"
+              max="2000"
+              value={filters.minPenerima}
+              onChange={(e) => setFilters({...filters, minPenerima: parseInt(e.target.value)})}
+              className="w-full"
+            />
+            <span className="text-xs text-gray-500">{filters.minPenerima.toLocaleString('id-ID')}</span>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mitra</label>
+            <select
+              value={filters.mitra}
+              onChange={(e) => setFilters({...filters, mitra: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            >
+              <option value="all">Semua Mitra</option>
+              <option value="LAZIS">LAZIS</option>
+              <option value="BAZNAS">BAZNAS</option>
+              <option value="MTT">MTT</option>
+            </select>
+          </div>
+          
+          <div className="flex flex-col space-y-2">
+            <label className="flex items-center">
               <input
-                type="range"
-                min="0"
-                max="2000"
-                value={filters.minPenerima}
-                onChange={(e) => setFilters({...filters, minPenerima: parseInt(e.target.value)})}
-                className="w-full"
+                type="checkbox"
+                checked={filters.showLabels}
+                onChange={(e) => setFilters({...filters, showLabels: e.target.checked})}
+                className="mr-2"
               />
-              <span className="text-xs text-gray-500">{filters.minPenerima.toLocaleString('id-ID')}</span>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mitra</label>
-              <select
-                value={filters.mitra}
-                onChange={(e) => setFilters({...filters, mitra: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-              >
-                <option value="all">Semua Mitra</option>
-                <option value="LAZIS">LAZIS</option>
-                <option value="BAZNAS">BAZNAS</option>
-                <option value="MTT">MTT</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <div className="font-medium text-gray-900">{stats.totalProvinsi} Provinsi</div>
-                <div className="text-gray-500">{stats.totalPenerima.toLocaleString('id-ID')} Penerima</div>
-              </div>
+              <span className="text-sm">Tampilkan Label</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={filters.showMarkers}
+                onChange={(e) => setFilters({...filters, showMarkers: e.target.checked})}
+                className="mr-2"
+              />
+              <span className="text-sm">Tampilkan Marker</span>
+            </label>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <div className="font-medium text-gray-900">Zoom: {zoom.toFixed(1)}x</div>
+              <div className="text-gray-500">{stats.totalProvinsi} Provinsi</div>
+              <div className="text-gray-500">{stats.totalPenerima.toLocaleString('id-ID')} Penerima</div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Map Container */}
-      <div className="relative w-full h-96 bg-gradient-to-br from-blue-100 via-green-50 to-blue-100 rounded-lg border border-gray-200 mb-6 overflow-hidden">
+      {/* Interactive Map Container */}
+      <div 
+        className="relative w-full h-96 bg-gradient-to-br from-blue-100 via-green-50 to-blue-100 rounded-lg border border-gray-200 mb-6 overflow-hidden cursor-move"
+        ref={mapRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+        style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+      >
         {geoData ? (
           <ComposableMap
             projection="geoMercator"
             projectionConfig={{
-              scale: 700,
-              center: [118, -1.5] // Center Indonesia
+              scale: 700 * zoom,
+              center: center
             }}
             style={{ width: "100%", height: "100%" }}
           >
-            <ZoomableGroup>
+            <ZoomableGroup zoom={1} center={[0, 0]}>
               <Geographies geography={geoData}>
                 {({ geographies }) =>
                   geographies.map((geo) => (
@@ -211,7 +319,7 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
                       geography={geo}
                       fill="#e5e7eb"
                       stroke="#d1d5db"
-                      strokeWidth={0.5}
+                      strokeWidth={0.5 / zoom}
                       style={{
                         default: { outline: "none" },
                         hover: { fill: "#cbd5e1", outline: "none" },
@@ -223,34 +331,36 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
               </Geographies>
               
               {/* Province Markers */}
-              {filteredMarkers.map((marker, index) => (
+              {filters.showMarkers && filteredMarkers.map((marker, index) => (
                 <Marker key={index} coordinates={marker.coordinates}>
                   <circle
                     r={getMarkerSize(marker.penerima)}
                     fill={getMarkerColor(marker.penerima)}
                     stroke="#ffffff"
-                    strokeWidth={1}
+                    strokeWidth={1 / zoom}
                     style={{ cursor: "pointer" }}
                     onClick={() => setSelectedProvince(selectedProvince === marker.name ? null : marker.name)}
                   />
-                  <text
-                    textAnchor="middle"
-                    y={getMarkerSize(marker.penerima) + 15}
-                    style={{
-                      fontFamily: "system-ui",
-                      fontSize: "10px",
-                      fill: "#374151",
-                      fontWeight: "bold"
-                    }}
-                  >
-                    {marker.name.replace(' ', '\n')}
-                  </text>
+                  {filters.showLabels && (
+                    <text
+                      textAnchor="middle"
+                      y={getMarkerSize(marker.penerima) + 15 / zoom}
+                      style={{
+                        fontFamily: "system-ui",
+                        fontSize: Math.max(8, 10 / zoom) + "px",
+                        fill: "#374151",
+                        fontWeight: "bold"
+                      }}
+                    >
+                      {marker.name.replace(' ', '\n')}
+                    </text>
+                  )}
                 </Marker>
               ))}
             </ZoomableGroup>
           </ComposableMap>
         ) : (
-          // Fallback simple visualization
+          // Enhanced Fallback visualization
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="grid grid-cols-5 gap-2">
               {filteredMarkers.map((marker, index) => (
@@ -267,6 +377,35 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
                   <div className="text-xs text-gray-500">{marker.penerima.toLocaleString('id-ID')}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Interactive Controls */}
+        {showControls && (
+          <div className="absolute top-4 right-4 bg-white bg-opacity-95 rounded-lg p-2 shadow-lg">
+            <div className="flex flex-col space-y-1">
+              <button
+                onClick={handleZoomIn}
+                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                title="Zoom In"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleZoomOut}
+                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                title="Zoom Out"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleResetView}
+                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                title="Reset View"
+              >
+                <Home className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}
@@ -294,11 +433,20 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
           </div>
         </div>
 
-        {/* Stats Summary */}
-        <div className="absolute top-4 right-4 bg-white bg-opacity-95 rounded-lg p-3 text-xs shadow-lg">
-          <div className="text-center">
-            <div className="font-bold text-blue-600 text-lg">{stats.totalProvinsi}</div>
-            <div className="text-gray-600">Provinsi</div>
+        {/* Zoom Level Display */}
+        <div className="absolute bottom-4 right-4 bg-white bg-opacity-95 rounded-lg p-2 text-xs shadow-lg">
+          <div className="flex items-center space-x-2">
+            <Move className="w-3 h-3" />
+            <span>Zoom: {zoom.toFixed(1)}x</span>
+          </div>
+        </div>
+
+        {/* Interactive Guide */}
+        <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 rounded-lg p-2 text-xs shadow-lg">
+          <div className="space-y-1">
+            <div>🖱️ Drag untuk pan</div>
+            <div>🔄 Scroll untuk zoom</div>
+            <div>📍 Klik marker untuk detail</div>
           </div>
         </div>
       </div>
@@ -326,7 +474,7 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
                   
                   <div className="bg-white rounded-lg p-3 border border-blue-100">
                     <div className="flex items-center space-x-2 mb-2">
-                      <Heart className="w-4 h-4 text-red-500" />
+                      <Target className="w-4 h-4 text-red-500" />
                       <span className="text-sm font-medium">Hewan</span>
                     </div>
                     <div className="text-xl font-bold text-gray-900">
@@ -358,4 +506,4 @@ const AdvancedIndonesiaMap: React.FC<AdvancedIndonesiaMapProps> = ({ data, loadi
   );
 };
 
-export default AdvancedIndonesiaMap; 
+export default InteractiveIndonesiaMap; 

@@ -3,6 +3,7 @@ import { useInView } from "react-intersection-observer";
 import { ArrowRight, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { articleData } from "./ArticleDetail";
+import HeaderSlider from "../components/HeaderSlider";
 
 const Home = () => {
   const { ref: heroRef, inView: heroInView } = useInView({
@@ -24,69 +25,164 @@ const Home = () => {
 
   return (
     <div className="pt-20">
-      {/* Hero Section */}
+      {/* Full Width Hero Section with Auto Slider */}
       <section
         ref={heroRef}
-        className="relative min-h-[80vh] flex items-center bg-gradient-to-r from-primary to-[#009E47]"
+        className="w-full bg-gray-50"
       >
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683311-eac922347aa1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] mix-blend-overlay opacity-20" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        {/* Full Width Container - No horizontal padding */}
+        <div className="w-full">
           <div
-            className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center transition-all duration-1000 ${
+            className={`transition-all duration-1000 ${
               heroInView
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-10"
             }`}
           >
-            <div className="text-white">
-              <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                Welcome to MTT Official Website
-              </h1>
-              <p className="text-xl md:text-2xl mb-8 opacity-90">
-                One stop portal for all MTT content for all Tflyers
-              </p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center bg-white text-primary px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Get Started
-                <ArrowRight className="ml-2" size={20} />
-              </Link>
+            {/* Auto Header Slider - Full Width */}
+            <HeaderSlider className="" />
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced CTA Section - Beautified */}
+      <section className="py-16 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Layanan Utama MTT
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Portal terpadu untuk semua kebutuhan layanan Majelis Telkomsel Taqwa
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Program Qurban Card */}
+            <div className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="relative p-8 text-white">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <span className="text-3xl">🕌</span>
+                  </div>
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-4">Program Qurban</h3>
+                <p className="text-white/90 mb-6 leading-relaxed">
+                  Qurban amanah & transparan bersama MTT. Disalurkan dengan sistem yang terpercaya dan tepat sasaran.
+                </p>
+                
+                <Link
+                  to="/service/qurban/pendaftaran"
+                  className="inline-flex items-center bg-white text-green-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg"
+                >
+                  Daftar Sekarang
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full"></div>
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full"></div>
             </div>
-            <div className="hidden lg:block">
-              <img
-                src="/assets/images/header.png"
-                alt="Digital Experience"
-                className="rounded-lg shadow-2xl"
-              />
+
+            {/* Dashboard Card */}
+            <div className="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="relative p-8 text-white">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <span className="text-3xl">📊</span>
+                  </div>
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-4">Dashboard</h3>
+                <p className="text-white/90 mb-6 leading-relaxed">
+                  Monitoring distribusi real-time dengan peta interaktif dan analisis data lengkap.
+                </p>
+                
+                <Link
+                  to="/service/qurban/dashboard"
+                  className="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg"
+                >
+                  Lihat Dashboard
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full"></div>
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full"></div>
+            </div>
+
+            {/* Layanan MTT Card */}
+            <div className="group relative overflow-hidden bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="relative p-8 text-white">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <span className="text-3xl">📱</span>
+                  </div>
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-bold mb-4">Layanan MTT</h3>
+                <p className="text-white/90 mb-6 leading-relaxed">
+                  Portal lengkap layanan Tflyers dengan berbagai fitur untuk keluarga besar Telkomsel.
+                </p>
+                
+                <Link
+                  to="/service"
+                  className="inline-flex items-center bg-white text-purple-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg"
+                >
+                  Jelajahi Layanan
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full"></div>
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full"></div>
             </div>
           </div>
         </div>
       </section>
+
       {/* Trusted Section */}
-      <section className="mt-14">
-        <div className="flex flex-col justify-center items-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Trusted by partners and businesses globally
-          </h1>
-          <p className='class="text-xl text-gray-600 max-w-3xl mx-auto'>
-            Powering businesses across the world
-          </p>
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Trusted by partners and businesses globally
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Powering businesses across the world
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 items-center justify-items-center">
+            {companyData.map((image, index) => (
+              <div key={index} className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                <img
+                  className="w-full h-16 object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                  src={`/assets/images/company/${image}`}
+                  alt={`Company logo ${index + 1}`}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-flow-row grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-5 place-items-center">
-        <div className="hidden sm:block"></div>
-          {companyData.map((image, index) => (
-            <img
-              key={index}
-              className="w-[159px] h-auto object-contain"
-              src={`/assets/images/company/${image}`}
-              alt={`Company logo ${index + 1}`}
-            />
-          ))}
-          <div className="hidden sm:block"></div>
-        </div>
-        <div></div>
       </section>
+
       {/* Features Section */}
       <section ref={featuresRef} className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -108,32 +204,31 @@ const Home = () => {
             {articleData?.slice(0, 3).map((article, index) => (
               <div
                 key={index}
-                className="bg-white p-0 shadow-lg hover:shadow-xl transition-shadow"
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
               >
-                <div className=" overflow-hidden">
+                <div className="overflow-hidden">
                   <img
-                    className="w-full h-48 object-cover transition-transform duration-300 hover:scale-125 hover:shadow-xl"
+                    className="w-full h-48 object-cover transition-transform duration-300 hover:scale-110"
                     src={article.image}
-                  ></img>
+                    alt={article.title}
+                  />
                 </div>
-                <div className="relative p-4 min-h-[330px]">
-                  <h3 className="text-[18px] font-bold text-gray-900 mb-4">
+                <div className="relative p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 line-clamp-2">
                     {article.title}
                   </h3>
                   <div
-                    className="mt-4 text-[16px] text-gray-700 leading-relaxed line-clamp-4"
+                    className="text-gray-700 leading-relaxed line-clamp-3 mb-6"
                     dangerouslySetInnerHTML={{ __html: article.news }}
                   />
-                  <div className="absolute bottom-0 flex flex-row w-[95%] justify-between items-center mt-2 py-4 pr-4">
-                    <div className="flex flex-row items-center">
-                      <Calendar width={14} className="text-gray-600 mr-1" />
-                      <h2 className="text-[16px] text-gray-600 leading-relaxed line-clamp-4">
-                        {article?.created}
-                      </h2>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      <span>{article?.created}</span>
                     </div>
                     <Link
                       to={`/articles/${article.id}`}
-                      className="inline-flex items-center bg-tertiary1 text-white px-8 py-3 rounded-full font-semibold transition-colors"
+                      className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-medium text-sm transition-colors"
                     >
                       Selengkapnya
                     </Link>
@@ -142,30 +237,52 @@ const Home = () => {
               </div>
             ))}
           </div>
-          <div className="flex flex-row justify-center items-center mt-12">
+          <div className="text-center mt-12">
             <Link
-              to={`/articles`}
-              className="inline-flex items-center bg-tertiary2 text-tertiary3 px-8 py-3 rounded-full font-semibold transition-colors"
+              to="/articles"
+              className="inline-flex items-center bg-white text-green-600 border-2 border-green-600 hover:bg-green-600 hover:text-white px-8 py-3 rounded-full font-semibold transition-all duration-300"
             >
               Lihat berita lainnya
+              <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-8">
-            Ready to Get Started?
-          </h2>
-          <Link
-            to="/contact"
-            className="inline-flex items-center bg-white text-primary px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors"
-          >
-            Contact Us
-            <ArrowRight className="ml-2" size={20} />
-          </Link>
+      {/* Enhanced CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-green-600 to-emerald-700 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+              Ready to Get Started?
+            </h2>
+            <p className="text-xl text-white/90 mb-8">
+              Bergabunglah dengan keluarga besar MTT dan nikmati berbagai layanan untuk Tflyers
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/service/qurban/pendaftaran"
+                className="inline-flex items-center bg-white text-green-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Daftar Qurban
+                <span className="ml-2">🕌</span>
+              </Link>
+              <Link
+                to="/contact"
+                className="inline-flex items-center bg-transparent border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-green-600 transition-all duration-300"
+              >
+                Contact Us
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>
