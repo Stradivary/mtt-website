@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^3.3.4",
     "@supabase/supabase-js": "^2.49.9",
     "@types/leaflet": "^1.9.18",
+    "d3-geo": "^3.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
@@ -21,7 +22,9 @@
     "react-intersection-observer": "^9.8.1",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^6.22.3",
+    "react-simple-maps": "^3.0.0",
     "recharts": "^2.15.3",
+    "topojson-client": "^3.1.0",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },
