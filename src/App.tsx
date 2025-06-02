@@ -9,6 +9,12 @@ import Service from "./pages/Service";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 
+// New Qurban Components
+import QurbanService from "./pages/qurban/QurbanService";
+import Pendaftaran from "./pages/qurban/Pendaftaran";
+import Dashboard from "./pages/qurban/Dashboard";
+import Upload from "./pages/qurban/Upload";
+
 function App() {
   return (
     <Router>
@@ -20,7 +26,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/articles" element={<Articles />} />
             <Route path="/articles/:id" element={<ArticleDetail />} />
-            <Route path="/service" element={<Service />} />
+            <Route path="/service" element={<QurbanService />} />
+            <Route path="/service/qurban/pendaftaran" element={<Pendaftaran />} />
+            <Route path="/service/qurban/dashboard" element={<Dashboard />} />
+            <Route path="/service/qurban/upload" element={<Upload />} />
             <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
