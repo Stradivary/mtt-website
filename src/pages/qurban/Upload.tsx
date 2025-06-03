@@ -1,112 +1,66 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Upload as UploadIcon, FileSpreadsheet, AlertCircle, CheckCircle, X, Loader2 } from 'lucide-react';
-import { DuplicateReviewModal } from '../../components/DuplicateReviewModal';
-import { UploadProcessor, DuplicateDetectionConfig, ProcessedUploadResult } from '../../utils/duplicateHandler';
+import { ArrowLeft, Upload as UploadIcon, FileSpreadsheet, CheckCircle, X, Loader2, AlertCircle } from 'lucide-react';
+import { 
+  authenticateUploader, 
+  saveMuzakkiData, 
+  saveDistribusiData, 
+  saveUploadHistory,
+  type Uploader,
+  type Muzakki,
+  type Distribusi 
+} from '../../lib/supabase';
 
-interface FileUpload {
+interface UploadFile {
   id: string;
   file: File;
   type: 'muzakki' | 'distribusi' | null;
+  status: 'pending' | 'uploading' | 'completed' | 'error';
   progress: number;
-  status: 'pending' | 'uploading' | 'detecting_duplicates' | 'reviewing_duplicates' | 'processing' | 'completed' | 'error';
+  result?: {
+    success: number;
+    total: number;
+    duplicates: number;
+    errors: string[];
+  };
   error?: string;
-  result?: ProcessedUploadResult;
 }
 
 const Upload = () => {
+  // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [uploader, setUploader] = useState<any>(null);
-  const [uploadFiles, setUploadFiles] = useState<FileUpload[]>([]);
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [loginError, setLoginError] = useState<string>('');
+  const [uploader, setUploader] = useState<Uploader | null>(null);
+  const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  
-  // Upload queue management
-  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
-  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
-  
-  // Duplicate handling states
-  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [currentProcessingFile, setCurrentProcessingFile] = useState<FileUpload | null>(null);
-  const [duplicateResult, setDuplicateResult] = useState<ProcessedUploadResult | null>(null);
 
+  // Upload state
+  const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Login handler
   const handleLogin = async (uploadKey: string) => {
     setIsLoggingIn(true);
     setLoginError('');
-    
+
     try {
-      // Demo mode for testing - only for actual demo keys
-      const demoKeys = ['demo', 'test'];
-      const isDemoMode = demoKeys.some(key => uploadKey.toLowerCase().startsWith(key.toLowerCase()));
+      const uploaderData = await authenticateUploader(uploadKey);
       
-      if (isDemoMode) {
-        // Demo authentication - create mock uploader
-        const demoUploader = {
-          id: '550e8400-e29b-41d4-a716-446655440001',
-          email: 'demo@mtt.org',
-          name: 'Demo User',
-          mitra_name: 'Demo Mitra',
-          upload_key: uploadKey,
-          is_active: true
-        };
-        
-    setIsAuthenticated(true);
-        setUploader(demoUploader);
-        console.log('✅ Demo mode authenticated as:', demoUploader.name, '(' + demoUploader.mitra_name + ')');
-        return;
-      }
-      
-      // Try real authentication for all non-demo keys
-      try {
-        const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
-        
-        // Test connection first
-        const connectionTest = await supabaseAdmin
-          .from('uploaders')
-          .select('id')
-          .limit(1);
-          
-        if (connectionTest.error) {
-          console.warn('⚠️ Supabase connection failed:', connectionTest.error);
-          throw new Error('Connection failed');
-        }
-        
-        console.log('🔧 Supabase connection successful, attempting authentication...');
-        
-        // Query the uploaders table for the provided upload key
-        const { data: uploaderData, error } = await supabaseAdmin
-          .from(TABLES.UPLOADERS)
-          .select('*')
-          .eq('upload_key', uploadKey.trim())
-          .eq('is_active', true)
-          .single();
-        
-        if (error || !uploaderData) {
-          console.error('Authentication failed:', error);
-          setLoginError('Kode akses tidak valid atau tidak aktif. Hubungi admin untuk bantuan.');
-          return;
-        }
-        
-        // Successful authentication
+      if (uploaderData) {
         setIsAuthenticated(true);
         setUploader(uploaderData);
         console.log('✅ Authenticated as:', uploaderData.name, '(' + uploaderData.mitra_name + ')');
-        
-      } catch (dbError) {
-        console.error('Database authentication failed:', dbError);
-        setLoginError('Koneksi database gagal. Pastikan koneksi internet stabil dan coba lagi.');
+      } else {
+        setLoginError('Kode akses tidak valid atau tidak aktif');
       }
-      
     } catch (error) {
       console.error('Login error:', error);
-      setLoginError('Terjadi kesalahan saat login. Silakan coba lagi.');
+      setLoginError('Terjadi kesalahan saat login');
     } finally {
       setIsLoggingIn(false);
     }
   };
 
+  // Logout handler
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUploader(null);
@@ -114,32 +68,15 @@ const Upload = () => {
     setLoginError('');
   };
 
-  // File detection logic
+  // File type detection
   const detectFileType = (filename: string): 'muzakki' | 'distribusi' | null => {
-    const normalizedName = filename.toLowerCase();
-    if (normalizedName.includes('muzakki')) return 'muzakki';
-    if (normalizedName.includes('distribusi')) return 'distribusi';
+    const name = filename.toLowerCase();
+    if (name.includes('muzakki')) return 'muzakki';
+    if (name.includes('distribusi')) return 'distribusi';
     return null;
   };
 
-  // File upload handlers
-  const handleFilesDrop = useCallback((files: FileList) => {
-    const validFiles = Array.from(files).filter(file => {
-      const extension = file.name.toLowerCase().split('.').pop();
-      return extension === 'csv' || extension === 'xlsx';
-    });
-
-    const newUploads: FileUpload[] = validFiles.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      file,
-      type: detectFileType(file.name),
-      progress: 0,
-      status: 'pending'
-    }));
-
-    setUploadFiles(prev => [...prev, ...newUploads]);
-  }, []);
-
+  // File drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -153,159 +90,160 @@ const Upload = () => {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    handleFilesDrop(e.dataTransfer.files);
-  }, [handleFilesDrop]);
+    handleFiles(e.dataTransfer.files);
+  }, []);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      handleFilesDrop(e.target.files);
+      handleFiles(e.target.files);
     }
-  }, [handleFilesDrop]);
+  }, []);
 
-  // Helper function to process upload with specific config
-  const processUploadWithConfig = async (
-    upload: FileUpload, 
-    fileData: any[], 
-    existingData: any[], 
-    config: DuplicateDetectionConfig
-  ) => {
+  // File processing
+  const handleFiles = (files: FileList) => {
+    const validFiles = Array.from(files).filter(file => {
+      const extension = file.name.toLowerCase().split('.').pop();
+      return extension === 'csv' || extension === 'xlsx';
+    });
+
+    const newUploads: UploadFile[] = validFiles.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      type: detectFileType(file.name),
+      status: 'pending',
+      progress: 0
+    }));
+
+    setUploadFiles(prev => [...prev, ...newUploads]);
+  };
+
+  // CSV Parser
+  const parseCSV = (text: string): any[] => {
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    const records: any[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      if (values.length === headers.length) {
+        const record: any = {};
+        headers.forEach((header, index) => {
+          record[header] = values[index] || null;
+        });
+        records.push(record);
+      }
+    }
+
+    return records;
+  };
+
+  // Process single file upload
+  const processUpload = async (upload: UploadFile) => {
+    if (!uploader || !upload.type) {
+      updateUploadStatus(upload.id, 'error', 'Invalid file type or uploader');
+      return;
+    }
+
+    updateUploadStatus(upload.id, 'uploading', undefined, 10);
+
     try {
-      updateUploadStatus(upload.id, 'processing');
-      
-      const processor = new UploadProcessor();
-      let finalResult: ProcessedUploadResult;
+      // Read file
+      const text = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(upload.file);
+      });
+
+      updateUploadStatus(upload.id, 'uploading', undefined, 30);
+
+      // Parse CSV
+      const records = parseCSV(text);
+      if (records.length === 0) {
+        updateUploadStatus(upload.id, 'error', 'No valid records found in file');
+        return;
+      }
+
+      updateUploadStatus(upload.id, 'uploading', undefined, 50);
+
+      // Prepare data for database
+      let result: { success: number; errors: any[] };
       
       if (upload.type === 'muzakki') {
-        finalResult = await processor.processMuzakkiUpload(fileData, existingData, config);
+        const muzakkiRecords: Muzakki[] = records.map(record => ({
+          uploader_id: uploader.id,
+          nama_muzakki: record.nama_muzakki || '',
+          email: record.email || null,
+          telepon: record.telepon || null,
+          alamat: record.alamat || null,
+          provinsi: record.provinsi || null,
+          kabupaten: record.kabupaten || null,
+          jenis_hewan: record.jenis_hewan as 'Sapi' | 'Kambing' | 'Domba',
+          jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
+          nilai_qurban: parseFloat(record.nilai_qurban) || 0,
+          tanggal_penyerahan: record.tanggal_penyerahan || null
+        }));
+
+        updateUploadStatus(upload.id, 'uploading', undefined, 70);
+        result = await saveMuzakkiData(muzakkiRecords);
       } else {
-        finalResult = await processor.processDistribusiUpload(fileData, existingData, config);
+        const distribusiRecords: Distribusi[] = records.map(record => ({
+          uploader_id: uploader.id,
+          nama_penerima: record.nama_penerima || '',
+          alamat_penerima: record.alamat_penerima || '',
+          provinsi: record.provinsi || null,
+          kabupaten: record.kabupaten || null,
+          jenis_hewan: record.jenis_hewan as 'Sapi' | 'Kambing' | 'Domba',
+          jumlah_daging: parseFloat(record.jumlah_daging) || null,
+          tanggal_distribusi: record.tanggal_distribusi || '',
+          foto_distribusi_url: record.foto_distribusi_url || null,
+          status: record.status || 'Selesai',
+          catatan: record.catatan || null
+        }));
+
+        updateUploadStatus(upload.id, 'uploading', undefined, 70);
+        result = await saveDistribusiData(distribusiRecords);
       }
-      
-      await finalizeUpload(upload, finalResult);
+
+      updateUploadStatus(upload.id, 'uploading', undefined, 90);
+
+      // Save upload history
+      await saveUploadHistory({
+        uploader_id: uploader.id,
+        filename: upload.file.name,
+        file_type: upload.type,
+        total_records: records.length,
+        successful_records: result.success,
+        failed_records: result.errors.length,
+        file_size_bytes: upload.file.size,
+        upload_status: 'completed'
+      });
+
+      // Update final status
+      updateUploadStatus(upload.id, 'completed', undefined, 100, {
+        success: result.success,
+        total: records.length,
+        duplicates: result.duplicates,
+        errors: result.errors.map(e => e.message || 'Unknown error')
+      });
+
     } catch (error) {
-      updateUploadStatus(
-        upload.id, 
-        'error', 
-        error instanceof Error ? error.message : 'Processing failed'
+      console.error('Upload error:', error);
+      updateUploadStatus(upload.id, 'error', 
+        error instanceof Error ? error.message : 'Upload failed'
       );
     }
   };
 
-  // Upload processing with duplicate detection (now adds to queue)
-  const processUpload = async (upload: FileUpload) => {
-    console.log(`📥 Adding ${upload.file.name} to upload queue`);
-    
-    // Add to queue if not already there
-    setUploadQueue(prev => {
-      if (!prev.includes(upload.id)) {
-        return [...prev, upload.id];
-      }
-      return prev;
-    });
-  };
-
-  // Trigger queue processing when queue changes
-  useEffect(() => {
-    if (uploadQueue.length > 0 && !isProcessingQueue) {
-      console.log(`🎯 Queue has ${uploadQueue.length} files, starting processing...`);
-      processUploadQueue();
-    }
-  }, [uploadQueue, isProcessingQueue]);
-
-  // Cleanup function to reset modal states
-  const resetModalStates = () => {
-    setShowDuplicateModal(false);
-    setCurrentProcessingFile(null);
-    setDuplicateResult(null);
-  };
-
-  // Handle duplicate review completion
-  const handleDuplicateReviewComplete = async (finalConfig: DuplicateDetectionConfig) => {
-    if (!currentProcessingFile || !duplicateResult) {
-      console.warn('⚠️ No file or result to process in duplicate review');
-      resetModalStates();
-      return;
-    }
-
-    try {
-      // Store current file info before resetting states
-      const fileToProcess = currentProcessingFile;
-      const resultToProcess = duplicateResult;
-      
-      console.log(`🔄 Processing duplicate review for: ${fileToProcess.file.name}`);
-      
-      // Reset modal states FIRST to allow queue to continue
-      resetModalStates();
-      
-      // Update status to processing
-      updateUploadStatus(fileToProcess.id, 'processing');
-
-      // Reprocess with final configuration
-      const processor = new UploadProcessor();
-      const existingData = await fetchExistingData(fileToProcess.type!);
-      const fileData = await parseFileData(fileToProcess.file);
-
-      let finalResult: ProcessedUploadResult;
-      if (fileToProcess.type === 'muzakki') {
-        finalResult = await processor.processMuzakkiUpload(fileData, existingData, finalConfig);
-      } else {
-        finalResult = await processor.processDistribusiUpload(fileData, existingData, finalConfig);
-      }
-
-      await finalizeUpload(fileToProcess, finalResult);
-      
-      console.log(`✅ Completed duplicate review processing for: ${fileToProcess.file.name}`);
-      
-    } catch (error) {
-      console.error('❌ Error processing duplicate review:', error);
-      if (currentProcessingFile) {
-        updateUploadStatus(
-          currentProcessingFile.id, 
-          'error', 
-          error instanceof Error ? error.message : 'Failed to process duplicates'
-        );
-      }
-      
-      // Ensure states are reset even on error
-      resetModalStates();
-    }
-  };
-
-  // Handle modal close (cancel)
-  const handleModalClose = () => {
-    if (currentProcessingFile) {
-      console.log(`❌ User cancelled duplicate review for: ${currentProcessingFile.file.name}`);
-      // Reset upload status to pending so user can retry
-      updateUploadStatus(currentProcessingFile.id, 'pending');
-    }
-    resetModalStates();
-    
-    // Continue processing queue after modal close
-    console.log('🔄 Modal closed, queue will continue processing...');
-  };
-
-  // Finalize upload to database
-  const finalizeUpload = async (upload: FileUpload, result: ProcessedUploadResult) => {
-    try {
-      // Save processed data to database
-      await saveToDatabase(upload.type!, result.newRecords);
-      
-      // Save upload history
-      await saveUploadHistory(upload, result);
-      
-      updateUploadStatus(upload.id, 'completed', undefined, 100, result);
-    } catch (error) {
-      updateUploadStatus(upload.id, 'error', error instanceof Error ? error.message : 'Failed to save to database');
-    }
-  };
-
-  // Helper functions
+  // Update upload status helper
   const updateUploadStatus = (
     id: string, 
-    status: FileUpload['status'], 
+    status: UploadFile['status'], 
     error?: string, 
     progress?: number,
-    result?: ProcessedUploadResult
+    result?: UploadFile['result']
   ) => {
     setUploadFiles(prev => prev.map(upload => 
       upload.id === id 
@@ -314,692 +252,36 @@ const Upload = () => {
     ));
   };
 
+  // Remove upload
   const removeUpload = (id: string) => {
     setUploadFiles(prev => prev.filter(upload => upload.id !== id));
   };
 
-  // Mock functions (to be replaced with real implementations)
-  const parseFileData = async (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result as string;
-          const lines = text.split('\n').filter(line => line.trim() !== '');
-          
-          if (lines.length < 2) {
-            resolve([]);
-            return;
-          }
-          
-          const headers = lines[0].split(',').map(h => h.trim());
-          const records: any[] = [];
-          
-          for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',').map(v => v.trim());
-            if (values.length === headers.length) {
-              const record: any = {};
-              headers.forEach((header, index) => {
-                record[header] = values[index];
-              });
-              records.push(record);
-            }
-          }
-          
-          console.log(`Parsed ${records.length} records from ${file.name}`);
-          resolve(records);
-        } catch (error) {
-          console.error('Error parsing CSV:', error);
-          reject(new Error('Failed to parse CSV file'));
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
-      };
-      
-      reader.readAsText(file);
-    });
-  };
-
-  const fetchExistingData = async (type: 'muzakki' | 'distribusi'): Promise<any[]> => {
-    try {
-      // Check if we're in actual demo mode (Demo Mitra)
-      if (uploader?.mitra_name === 'Demo Mitra') {
-        console.log('🎭 Demo mode: Returning empty existing data...');
-        return [];
-      }
-
-      // Real database operations for authenticated users
-      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
-      
-      if (type === 'muzakki') {
-        const { data, error } = await supabaseAdmin
-          .from(TABLES.MUZAKKI)
-          .select('*');
-        
-        if (error) {
-          console.error('Error fetching muzakki data:', error);
-          throw new Error(`Failed to fetch muzakki data: ${error.message}`);
-        }
-        
-        console.log(`✅ Fetched ${data?.length || 0} existing muzakki records`);
-        return data || [];
-      } else {
-        const { data, error } = await supabaseAdmin
-          .from(TABLES.DISTRIBUSI)
-          .select('*');
-        
-        if (error) {
-          console.error('Error fetching distribusi data:', error);
-          throw new Error(`Failed to fetch distribusi data: ${error.message}`);
-        }
-        
-        console.log(`✅ Fetched ${data?.length || 0} existing distribusi records`);
-        return data || [];
-      }
-    } catch (error) {
-      console.error('Error connecting to database:', error);
-      throw error;
-    }
-  };
-
-  const saveToDatabase = async (type: string, records: any[]): Promise<void> => {
-    try {
-      if (records.length === 0) {
-        console.log('No records to save');
-        return;
-      }
-
-      // Check if we're in actual demo mode (Demo Mitra)
-      if (uploader?.mitra_name === 'Demo Mitra') {
-        console.log('🎭 Demo mode: Simulating database save...');
-        console.log(`📊 Would save ${records.length} ${type} records to database`);
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        console.log('✅ Demo: Database save completed successfully');
-        return;
-      }
-
-      // Real database operations for authenticated users
-      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
-      
-      // Step 1: Normalize location data to handle variations
-      console.log(`🔧 Normalizing ${records.length} ${type} records...`);
-      const normalizedRecords = normalizeLocationData(records);
-      
-      // Step 2: Ensure reference data exists
-      console.log('🔧 Ensuring reference data exists...');
-      await ensureReferenceData(normalizedRecords);
-      
-      // Step 3: Add uploader_id to all records
-      const recordsWithUploader = normalizedRecords.map(record => ({
-        ...record,
-        uploader_id: uploader?.id
-      }));
-      
-      // Step 4: Save to appropriate table
-      console.log(`💾 Saving ${recordsWithUploader.length} ${type} records to database...`);
-      
-      if (type === 'muzakki') {
-        const { error } = await supabaseAdmin
-          .from(TABLES.MUZAKKI)
-          .insert(recordsWithUploader);
-        
-        if (error) {
-          console.error('Error saving muzakki data:', error);
-          throw new Error(`Failed to save muzakki data: ${error.message}`);
-        }
-      } else if (type === 'distribusi') {
-        const { error } = await supabaseAdmin
-          .from(TABLES.DISTRIBUSI)
-          .insert(recordsWithUploader);
-        
-        if (error) {
-          console.error('Error saving distribusi data:', error);
-          throw new Error(`Failed to save distribusi data: ${error.message}`);
-        }
-      }
-      
-      console.log(`✅ Successfully saved ${recordsWithUploader.length} ${type} records to database`);
-    } catch (error) {
-      console.error('Error saving to database:', error);
-      throw error;
-    }
-  };
-
-  // Enhanced function to ensure reference data exists with proper error handling
-  const ensureReferenceData = async (records: any[]): Promise<void> => {
-    try {
-      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
-      
-      // Extract unique province and kabupaten codes from records (filter out empty values)
-      const uniqueProvinsi = [...new Set(records.map(r => r.kode_provinsi).filter(Boolean))];
-      const uniqueKabupaten = [...new Set(records.map(r => r.kode_kabupaten).filter(Boolean))];
-      
-      if (uniqueProvinsi.length === 0 && uniqueKabupaten.length === 0) {
-        console.log('No reference data codes found in records');
-        return;
-      }
-      
-      // Handle provinces with proper error handling
-      if (uniqueProvinsi.length > 0) {
-        try {
-          // Check existing provinces
-          const { data: existingProvinsi } = await supabaseAdmin
-            .from(TABLES.REF_PROVINSI)
-            .select('kode_provinsi')
-            .in('kode_provinsi', uniqueProvinsi);
-          
-          const existingProvinsiCodes = new Set(existingProvinsi?.map(p => p.kode_provinsi) || []);
-          const missingProvinsi = uniqueProvinsi.filter(code => !existingProvinsiCodes.has(code));
-          
-          // Insert missing provinces one by one to handle conflicts gracefully
-          for (const code of missingProvinsi) {
-            try {
-              const provinsiData = {
-                kode_provinsi: code,
-                nama_provinsi: getProvinsiName(code) || `Provinsi ${code}`
-              };
-              
-              const { error: provinsiError } = await supabaseAdmin
-                .from(TABLES.REF_PROVINSI)
-                .insert([provinsiData]);
-              
-              if (provinsiError) {
-                // If it's a duplicate key error, it means someone else inserted it, which is fine
-                if (provinsiError.code === '23505') {
-                  console.log(`✅ Provinsi ${code} already exists (concurrent insert)`);
-                } else {
-                  console.error(`Error inserting provinsi ${code}:`, provinsiError);
-                }
-              } else {
-                console.log(`✅ Inserted provinsi: ${code} - ${getProvinsiName(code)}`);
-              }
-            } catch (insertError) {
-              console.warn(`Failed to insert provinsi ${code}:`, insertError);
-            }
-          }
-        } catch (error) {
-          console.error('Error handling provinces:', error);
-        }
-      }
-      
-      // Handle kabupaten with proper error handling
-      if (uniqueKabupaten.length > 0) {
-        try {
-          // Check existing kabupaten
-          const { data: existingKabupaten } = await supabaseAdmin
-            .from(TABLES.REF_KABUPATEN)
-            .select('kode_kabupaten')
-            .in('kode_kabupaten', uniqueKabupaten);
-          
-          const existingKabupatenCodes = new Set(existingKabupaten?.map(k => k.kode_kabupaten) || []);
-          const missingKabupaten = uniqueKabupaten.filter(code => !existingKabupatenCodes.has(code));
-          
-          // Insert missing kabupaten one by one to handle conflicts gracefully
-          for (const code of missingKabupaten) {
-            try {
-              const provinsiCode = records.find(r => r.kode_kabupaten === code)?.kode_provinsi;
-              const kabupatenData = {
-                kode_kabupaten: code,
-                nama_kabupaten: getKabupatenName(code) || `Kabupaten ${code}`,
-                kode_provinsi: provinsiCode || uniqueProvinsi[0] || '35'
-              };
-              
-              const { error: kabupatenError } = await supabaseAdmin
-                .from(TABLES.REF_KABUPATEN)
-                .insert([kabupatenData]);
-              
-              if (kabupatenError) {
-                // If it's a duplicate key error, it means someone else inserted it, which is fine
-                if (kabupatenError.code === '23505') {
-                  console.log(`✅ Kabupaten ${code} already exists (concurrent insert)`);
-                } else {
-                  console.error(`Error inserting kabupaten ${code}:`, kabupatenError);
-                }
-              } else {
-                console.log(`✅ Inserted kabupaten: ${code} - ${getKabupatenName(code)}`);
-              }
-            } catch (insertError) {
-              console.warn(`Failed to insert kabupaten ${code}:`, insertError);
-            }
-          }
-        } catch (error) {
-          console.error('Error handling kabupaten:', error);
-        }
-      }
-      
-      console.log('✅ Reference data validation completed');
-      
-    } catch (error) {
-      console.error('Error ensuring reference data:', error);
-      // Don't throw here, let the main insert continue
-    }
-  };
-
-  // Enhanced function to normalize and validate location data
-  const normalizeLocationData = (records: any[]): any[] => {
-    return records.map(record => {
-      const normalized = { ...record };
-      
-      // Normalize province name variations
-      if (normalized.nama_provinsi) {
-        const provinsi = normalized.nama_provinsi.toLowerCase().trim();
-        
-        if (provinsi.includes('jakarta') || provinsi.includes('dki')) {
-          normalized.kode_provinsi = '31';
-          normalized.nama_provinsi = 'DKI Jakarta';
-        } else if (provinsi.includes('jawa timur') || provinsi.includes('jatim')) {
-          normalized.kode_provinsi = '35';
-          normalized.nama_provinsi = 'Jawa Timur';
-        } else if (provinsi.includes('jawa barat') || provinsi.includes('jabar')) {
-          normalized.kode_provinsi = '32';
-          normalized.nama_provinsi = 'Jawa Barat';
-        } else if (provinsi.includes('jawa tengah') || provinsi.includes('jateng')) {
-          normalized.kode_provinsi = '33';
-          normalized.nama_provinsi = 'Jawa Tengah';
-        } else if (provinsi.includes('yogyakarta') || provinsi.includes('jogja')) {
-          normalized.kode_provinsi = '34';
-          normalized.nama_provinsi = 'DI Yogyakarta';
-        }
-      }
-      
-      // Normalize kabupaten/kota name variations based on correct column names
-      // For muzakki: use 'alamat', for distribusi: use 'alamat_penerima'
-      const locationField = normalized.alamat_penerima || normalized.alamat || '';
-      if (locationField) {
-        const location = locationField.toLowerCase().trim();
-        
-        // Jakarta variations
-        if (location.includes('jakarta selatan') || location.includes('jaksel')) {
-          normalized.kode_kabupaten = '3171';
-          normalized.kode_provinsi = '31';
-        } else if (location.includes('jakarta timur') || location.includes('jaktim')) {
-          normalized.kode_kabupaten = '3172';
-          normalized.kode_provinsi = '31';
-        } else if (location.includes('jakarta pusat') || location.includes('jakpus')) {
-          normalized.kode_kabupaten = '3173';
-          normalized.kode_provinsi = '31';
-        } else if (location.includes('jakarta barat') || location.includes('jakbar')) {
-          normalized.kode_kabupaten = '3174';
-          normalized.kode_provinsi = '31';
-        } else if (location.includes('jakarta utara') || location.includes('jakut')) {
-          normalized.kode_kabupaten = '3175';
-          normalized.kode_provinsi = '31';
-        
-        // Jawa Timur variations
-        } else if (location.includes('surabaya') || location.includes('sby')) {
-          normalized.kode_kabupaten = '3578';
-          normalized.kode_provinsi = '35';
-        } else if (location.includes('gresik')) {
-          normalized.kode_kabupaten = '3525';
-          normalized.kode_provinsi = '35';
-        } else if (location.includes('sidoarjo')) {
-          normalized.kode_kabupaten = '3515';
-          normalized.kode_provinsi = '35';
-        } else if (location.includes('malang') && (location.includes('kota') || location.includes('kab'))) {
-          if (location.includes('kota')) {
-            normalized.kode_kabupaten = '3573';
-          } else {
-            normalized.kode_kabupaten = '3507';
-          }
-          normalized.kode_provinsi = '35';
-        
-        // Jawa Barat variations
-        } else if (location.includes('bogor')) {
-          if (location.includes('kota')) {
-            normalized.kode_kabupaten = '3271';
-          } else {
-            normalized.kode_kabupaten = '3201';
-          }
-          normalized.kode_provinsi = '32';
-        } else if (location.includes('bandung')) {
-          if (location.includes('kota')) {
-            normalized.kode_kabupaten = '3273';
-          } else if (location.includes('barat')) {
-            normalized.kode_kabupaten = '3217';
-          } else {
-            normalized.kode_kabupaten = '3204';
-          }
-          normalized.kode_provinsi = '32';
-        } else if (location.includes('depok')) {
-          normalized.kode_kabupaten = '3276';
-          normalized.kode_provinsi = '32';
-        } else if (location.includes('bekasi')) {
-          if (location.includes('kota')) {
-            normalized.kode_kabupaten = '3275';
-          } else {
-            normalized.kode_kabupaten = '3216';
-          }
-          normalized.kode_provinsi = '32';
-        
-        // Jawa Tengah variations
-        } else if (location.includes('semarang')) {
-          if (location.includes('kota')) {
-            normalized.kode_kabupaten = '3374';
-          } else {
-            normalized.kode_kabupaten = '3304';
-          }
-          normalized.kode_provinsi = '33';
-        } else if (location.includes('solo') || location.includes('surakarta')) {
-          normalized.kode_kabupaten = '3372';
-          normalized.kode_provinsi = '33';
-        
-        // Yogyakarta variations
-        } else if (location.includes('yogyakarta') || location.includes('jogja') || location.includes('yogya')) {
-          if (location.includes('kota') || !location.includes('kabupaten')) {
-            normalized.kode_kabupaten = '3471';
-          }
-          normalized.kode_provinsi = '34';
-        } else if (location.includes('bantul')) {
-          normalized.kode_kabupaten = '3402';
-          normalized.kode_provinsi = '34';
-        } else if (location.includes('sleman')) {
-          normalized.kode_kabupaten = '3404';
-          normalized.kode_provinsi = '34';
-        }
-      }
-      
-      return normalized;
-    });
-  };
-
-  // Helper functions to get proper names
-  const getProvinsiName = (code: string): string | null => {
-    const provinsiMap: Record<string, string> = {
-      '35': 'Jawa Timur',
-      '31': 'DKI Jakarta',
-      '32': 'Jawa Barat',
-      '33': 'Jawa Tengah',
-      '34': 'DI Yogyakarta',
-      '36': 'Banten',
-      '12': 'Sumatra Utara',
-      '13': 'Sumatra Barat',
-      '14': 'Riau',
-      '15': 'Jambi',
-      '16': 'Sumatra Selatan',
-      '17': 'Bengkulu',
-      '18': 'Lampung',
-      '19': 'Kepulauan Bangka Belitung',
-      '21': 'Kepulauan Riau',
-      '51': 'Bali',
-      '52': 'Nusa Tenggara Barat',
-      '53': 'Nusa Tenggara Timur',
-      '61': 'Kalimantan Barat',
-      '62': 'Kalimantan Tengah',
-      '63': 'Kalimantan Selatan',
-      '64': 'Kalimantan Timur',
-      '65': 'Kalimantan Utara',
-      '71': 'Sulawesi Utara',
-      '72': 'Sulawesi Tengah',
-      '73': 'Sulawesi Selatan',
-      '74': 'Sulawesi Tenggara',
-      '75': 'Gorontalo',
-      '76': 'Sulawesi Barat',
-      '81': 'Maluku',
-      '82': 'Maluku Utara',
-      '91': 'Papua Barat',
-      '94': 'Papua'
-    };
-    return provinsiMap[code] || null;
-  };
-
-  const getKabupatenName = (code: string): string | null => {
-    const kabupatenMap: Record<string, string> = {
-      // Jawa Timur
-      '3578': 'Kota Surabaya',
-      '3525': 'Kabupaten Gresik',
-      '3515': 'Kabupaten Sidoarjo',
-      '3573': 'Kota Malang',
-      '3507': 'Kabupaten Malang',
-      '3576': 'Kota Mojokerto',
-      '3517': 'Kabupaten Mojokerto',
-      
-      // DKI Jakarta
-      '3171': 'Jakarta Selatan',
-      '3172': 'Jakarta Timur',
-      '3173': 'Jakarta Pusat',
-      '3174': 'Jakarta Barat',
-      '3175': 'Jakarta Utara',
-      '3101': 'Kepulauan Seribu',
-      
-      // Jawa Barat
-      '3201': 'Kabupaten Bogor',
-      '3271': 'Kota Bogor',
-      '3273': 'Kota Bandung',
-      '3204': 'Kabupaten Bandung',
-      '3217': 'Kabupaten Bandung Barat',
-      '3276': 'Kota Depok',
-      '3275': 'Kota Bekasi',
-      '3216': 'Kabupaten Bekasi',
-      
-      // Jawa Tengah
-      '3304': 'Kabupaten Semarang',
-      '3374': 'Kota Semarang',
-      '3372': 'Kota Surakarta',
-      '3313': 'Kabupaten Sukoharjo',
-      
-      // DI Yogyakarta
-      '3471': 'Kota Yogyakarta',
-      '3401': 'Kabupaten Kulon Progo',
-      '3402': 'Kabupaten Bantul',
-      '3403': 'Kabupaten Gunung Kidul',
-      '3404': 'Kabupaten Sleman'
-    };
-    return kabupatenMap[code] || null;
-  };
-
-  const saveUploadHistory = async (upload: FileUpload, result: ProcessedUploadResult): Promise<void> => {
-    try {
-      // Check if we're in actual demo mode (Demo Mitra)
-      if (uploader?.mitra_name === 'Demo Mitra') {
-        console.log('🎭 Demo mode: Simulating upload history save...');
-        console.log(`📊 Would save upload history for ${upload.file.name}`);
-        return;
-      }
-
-      // Real database operations for authenticated users
-      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
-      
-      const uploadHistory = {
-        uploader_id: uploader?.id,
-        filename: upload.file.name,
-        file_type: upload.type!,
-        total_records: result.totalRecords,
-        successful_records: result.newRecords.length,
-        failed_records: result.errors.length,
-        file_size_bytes: upload.file.size,
-        processing_time_ms: Date.now() - new Date().getTime(), // Approximate
-        error_details: result.errors.length > 0 ? { errors: result.errors } : null,
-        upload_status: 'completed',
-        completed_at: new Date().toISOString()
-      };
-      
-      const { error } = await supabaseAdmin
-        .from(TABLES.UPLOAD_HISTORY)
-        .insert([uploadHistory]);
-      
-      if (error) {
-        console.error('Error saving upload history:', error);
-        throw new Error(`Failed to save upload history: ${error.message}`);
-      } else {
-        console.log('✅ Upload history saved successfully');
-      }
-    } catch (error) {
-      console.error('Error saving upload history:', error);
-      // Don't throw error here as the main upload was successful
-    }
-  };
-
-  const getStatusIcon = (status: FileUpload['status']) => {
+  // Get status icon
+  const getStatusIcon = (status: UploadFile['status']) => {
     switch (status) {
       case 'pending':
         return <FileSpreadsheet className="w-4 h-4 text-gray-400" />;
       case 'uploading':
-      case 'detecting_duplicates':
-      case 'processing':
         return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-      case 'reviewing_duplicates':
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
       case 'completed':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'error':
         return <X className="w-4 h-4 text-red-500" />;
-      default:
-        return <FileSpreadsheet className="w-4 h-4 text-gray-400" />;
     }
   };
 
-  const getStatusText = (status: FileUpload['status']) => {
+  // Get status text
+  const getStatusText = (status: UploadFile['status']) => {
     switch (status) {
       case 'pending': return 'Menunggu';
       case 'uploading': return 'Mengupload...';
-      case 'detecting_duplicates': return 'Mendeteksi duplikat...';
-      case 'reviewing_duplicates': return 'Menunggu review duplikat';
-      case 'processing': return 'Memproses...';
       case 'completed': return 'Selesai';
       case 'error': return 'Error';
-      default: return 'Unknown';
     }
   };
 
-  // Queue processor - handles files sequentially
-  const processUploadQueue = async () => {
-    if (isProcessingQueue || uploadQueue.length === 0) return;
-    
-    setIsProcessingQueue(true);
-    console.log(`🔄 Starting queue processing. ${uploadQueue.length} files in queue.`);
-    
-    while (uploadQueue.length > 0) {
-      const fileId = uploadQueue[0];
-      const fileToProcess = uploadFiles.find(f => f.id === fileId);
-      
-      if (!fileToProcess) {
-        console.warn(`⚠️ File with ID ${fileId} not found, removing from queue`);
-        setUploadQueue(prev => prev.slice(1));
-        continue;
-      }
-      
-      if (fileToProcess.status !== 'pending') {
-        console.log(`⏭️ Skipping ${fileToProcess.file.name} - status: ${fileToProcess.status}`);
-        setUploadQueue(prev => prev.slice(1));
-        continue;
-      }
-      
-      console.log(`🚀 Processing file from queue: ${fileToProcess.file.name}`);
-      
-      try {
-        await processUploadInternal(fileToProcess);
-        
-        // Wait for modal to be closed if it was opened
-        if (showDuplicateModal) {
-          console.log(`⏳ Waiting for modal to close for ${fileToProcess.file.name}...`);
-          // Wait until modal is closed
-          await new Promise<void>((resolve) => {
-            const checkModal = () => {
-              if (!showDuplicateModal) {
-                console.log(`✅ Modal closed for ${fileToProcess.file.name}, continuing queue`);
-                resolve();
-              } else {
-                setTimeout(checkModal, 500);
-              }
-            };
-            checkModal();
-          });
-        }
-        
-      } catch (error) {
-        console.error(`❌ Error processing ${fileToProcess.file.name}:`, error);
-      }
-      
-      // Remove processed file from queue
-      setUploadQueue(prev => prev.slice(1));
-      
-      // Small delay between files to ensure clean state
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    setIsProcessingQueue(false);
-    console.log('✅ Queue processing completed');
-  };
-
-  // Process single file (internal)
-  const processUploadInternal = async (upload: FileUpload): Promise<void> => {
-    if (!upload.type) {
-      updateUploadStatus(upload.id, 'error', 'Cannot determine file type from filename');
-      return;
-    }
-
-    console.log(`🚀 Starting upload processing for: ${upload.file.name} (${upload.type})`);
-
-    try {
-      // Step 1: Parse file data
-      updateUploadStatus(upload.id, 'uploading', undefined, 25);
-      const fileData = await parseFileData(upload.file);
-      console.log(`📄 Parsed ${fileData.length} records from ${upload.file.name}`);
-      
-      // Step 2: Fetch existing data from database
-      updateUploadStatus(upload.id, 'uploading', undefined, 50);
-      const existingData = await fetchExistingData(upload.type);
-      console.log(`💾 Found ${existingData.length} existing ${upload.type} records in database`);
-      
-      // Step 3: Detect duplicates
-      updateUploadStatus(upload.id, 'detecting_duplicates', undefined, 75);
-      const processor = new UploadProcessor();
-      
-      // Enhanced configuration for smarter handling
-      const config: DuplicateDetectionConfig = {
-        strictMode: false, // Enable fuzzy matching
-        action: 'prompt', // Always prompt for user decision
-        tolerance: 0.8
-      };
-
-      let result: ProcessedUploadResult;
-      if (upload.type === 'muzakki') {
-        result = await processor.processMuzakkiUpload(fileData, existingData, config);
-      } else {
-        result = await processor.processDistribusiUpload(fileData, existingData, config);
-      }
-
-      // Step 4: Smart duplicate handling
-      const totalDuplicates = result.duplicates.exact.length + 
-                             result.duplicates.fuzzy.length + 
-                             result.duplicates.partial.length;
-      
-      const newRecordsCount = result.newRecords.length;
-      const duplicateRatio = totalDuplicates / (totalDuplicates + newRecordsCount);
-      
-      console.log(`📊 Upload Analysis for ${upload.file.name}: ${newRecordsCount} new, ${totalDuplicates} duplicates (${Math.round(duplicateRatio * 100)}% duplicates)`);
-
-      // If high percentage of new records or user needs to review, show modal
-      if (totalDuplicates > 0 && (duplicateRatio <= 0.8 || newRecordsCount === 0)) {
-        console.log(`🔍 ${upload.file.name} needs duplicate review (${totalDuplicates} duplicates found)`);
-        
-        // Since we have queue system, we can safely show modal without conflicts
-        console.log(`📋 Showing duplicate review modal for ${upload.file.name}`);
-        setCurrentProcessingFile(upload);
-        setDuplicateResult(result);
-        updateUploadStatus(upload.id, 'reviewing_duplicates', undefined, 100);
-        setShowDuplicateModal(true);
-        
-        // Return here - queue will wait for modal to close
-        return;
-      } else {
-        // No duplicates, proceed directly
-        console.log(`✅ No duplicates found for ${upload.file.name}, proceeding directly`);
-        await finalizeUpload(upload, result);
-      }
-
-    } catch (error) {
-      console.error(`❌ Upload processing failed for ${upload.file.name}:`, error);
-      updateUploadStatus(upload.id, 'error', error instanceof Error ? error.message : 'Upload failed');
-    }
-  };
-
+  // Login form
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen pt-20 bg-gray-50">
@@ -1019,18 +301,17 @@ const Upload = () => {
               Upload Data Qurban
             </h1>
             <p className="text-gray-600">
-              Area khusus untuk mitra MTT mengupload data muzakki dan distribusi
+              Upload file CSV/Excel untuk data muzakki dan distribusi dengan mudah
             </p>
           </div>
 
-          {/* Authentication Form */}
           <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <UploadIcon className="w-8 h-8 text-purple-600" />
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UploadIcon className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Masuk sebagai Mitra</h2>
-              <p className="text-gray-600 mt-2">Masukkan kode akses yang diberikan admin</p>
+              <p className="text-gray-600 mt-2">Masukkan kode akses mitra</p>
             </div>
 
             <form onSubmit={(e) => { 
@@ -1044,13 +325,13 @@ const Upload = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kode Akses Mitra
+                    Kode Akses
                   </label>
                   <input
                     type="password"
                     name="uploadKey"
-                    placeholder="Masukkan kode akses mitra Anda"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Masukkan kode akses"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     required
                     disabled={isLoggingIn}
                   />
@@ -1067,7 +348,7 @@ const Upload = () => {
                 <button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-3 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
                 >
                   {isLoggingIn ? (
                     <>
@@ -1078,21 +359,6 @@ const Upload = () => {
                     <span>Masuk</span>
                   )}
                 </button>
-                
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start space-x-2">
-                    <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-700">
-                      <p className="font-medium mb-1">Hanya mitra resmi yang dapat mengakses:</p>
-                      <ul className="text-xs space-y-1">
-                        <li>• BMM (Badan Musyawarah Masjid)</li>
-                        <li>• LAZIS Muhammadiyah</li>
-                        <li>• LAZIS Nahdlatul Ulama</li>
-                        <li>• BAZNAS Pusat</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
               </div>
             </form>
           </div>
@@ -1101,6 +367,7 @@ const Upload = () => {
     );
   }
 
+  // Main upload interface
   return (
     <div className="min-h-screen pt-20 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -1118,7 +385,7 @@ const Upload = () => {
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
                 Masuk sebagai: <span className="font-semibold">{uploader?.name}</span>
-                <span className="text-blue-600 ml-1">({uploader?.mitra_name})</span>
+                <span className="text-green-600 ml-1">({uploader?.mitra_name})</span>
               </div>
               <button
                 onClick={handleLogout}
@@ -1134,80 +401,57 @@ const Upload = () => {
               Upload Data Qurban
             </h1>
             <p className="text-gray-600 mt-2">
-              Upload file CSV/Excel untuk data muzakki dan distribusi qurban dengan deteksi duplikat otomatis
+              Upload file CSV/Excel dengan format sederhana. Sistem akan mendeteksi tipe file otomatis.
             </p>
           </div>
         </div>
 
-        {/* Instructions */}
+        {/* Format Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-              <div>
-                <h3 className="font-semibold text-blue-900">Format File CSV/Excel</h3>
-                <p className="text-blue-700 text-sm">
-                  Sistem akan mendeteksi duplikat otomatis dan memberikan opsi penanganan
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowInstructions(!showInstructions)}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              {showInstructions ? 'Sembunyikan' : 'Lihat Panduan'}
-            </button>
+          <div className="flex items-center space-x-3 mb-3">
+            <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+            <h3 className="font-semibold text-blue-900">Format File CSV</h3>
           </div>
-          
-          {showInstructions && (
-            <div className="mt-4 pt-4 border-t border-blue-200">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-blue-900 mb-2">✅ Data Muzakki</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Format: {uploader?.mitra_name}_LOKASI_MUZAKKI_YYYYMMDD_HHMM.csv</li>
-                    <li>• Duplikat: nama + jenis_hewan + nilai_qurban</li>
-                    <li>• Fuzzy: kemiripan nama ≥80%</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-blue-900 mb-2">✅ Data Distribusi</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Format: {uploader?.mitra_name}_LOKASI_DISTRIBUSI_YYYYMMDD_HHMM.csv</li>
-                    <li>• Duplikat: nama_penerima + alamat + tanggal</li>
-                    <li>• Fuzzy: kemiripan alamat ≥80%</li>
-                  </ul>
-                </div>
-              </div>
+          <div className="grid md:grid-cols-2 gap-6 text-sm">
+            <div>
+              <h4 className="font-medium text-blue-900 mb-2">📊 Data Muzakki (Penyumbang)</h4>
+              <p className="text-blue-700 mb-2">Nama file harus mengandung kata "muzakki"</p>
+              <p className="text-blue-700">Kolom: nama_muzakki, email, telepon, alamat, provinsi, kabupaten, jenis_hewan, jumlah_hewan, nilai_qurban, tanggal_penyerahan</p>
             </div>
-          )}
+            <div>
+              <h4 className="font-medium text-blue-900 mb-2">📦 Data Distribusi (Penerima)</h4>
+              <p className="text-blue-700 mb-2">Nama file harus mengandung kata "distribusi"</p>
+              <p className="text-blue-700">Kolom: nama_penerima, alamat_penerima, provinsi, kabupaten, jenis_hewan, jumlah_daging, tanggal_distribusi</p>
+              <p className="text-blue-600 text-xs mt-1">* foto_distribusi_url, status, catatan bersifat opsional</p>
+            </div>
+          </div>
         </div>
 
         {/* Upload Area */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-            <UploadIcon className="w-5 h-5 mr-2 text-purple-500" />
+            <UploadIcon className="w-5 h-5 mr-2 text-green-500" />
             Upload File CSV/Excel
           </h2>
           
           <div 
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
               isDragging 
-                ? 'border-purple-400 bg-purple-50' 
-                : 'border-gray-300 hover:border-purple-400'
+                ? 'border-green-400 bg-green-50' 
+                : 'border-gray-300 hover:border-green-400'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileSpreadsheet className="w-8 h-8 text-purple-600" />
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileSpreadsheet className="w-8 h-8 text-green-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Seret file CSV/Excel ke sini
             </h3>
             <p className="text-gray-600 mb-4">
-              atau klik untuk memilih file dari komputer Anda
+              atau klik untuk memilih file dari komputer
             </p>
             <label className="inline-block">
               <input
@@ -1217,12 +461,12 @@ const Upload = () => {
                 onChange={handleFileInput}
                 className="hidden"
               />
-              <span className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors cursor-pointer">
+              <span className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors cursor-pointer">
                 Pilih File
               </span>
             </label>
             <p className="text-sm text-gray-500 mt-2">
-              Maksimal 5 file, ukuran per file maksimal 10MB (CSV/XLSX)
+              File CSV/Excel maksimal 10MB
             </p>
           </div>
         </div>
@@ -1243,7 +487,7 @@ const Upload = () => {
                       <div>
                         <div className="font-medium text-gray-900">{upload.file.name}</div>
                         <div className="text-sm text-gray-500">
-                          {upload.type ? `Type: ${upload.type}` : 'Type: Unknown'} • {(upload.file.size / 1024 / 1024).toFixed(2)} MB
+                          Type: {upload.type || 'Unknown'} • {(upload.file.size / 1024 / 1024).toFixed(2)} MB
                         </div>
                       </div>
                     </div>
@@ -1253,9 +497,27 @@ const Upload = () => {
                       {upload.status === 'pending' && (
                         <button
                           onClick={() => processUpload(upload)}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                          className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                         >
                           Upload
+                        </button>
+                      )}
+                      {upload.status === 'uploading' && (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded">
+                          {upload.progress}%
+                        </span>
+                      )}
+                      {upload.status === 'completed' && (
+                        <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded">
+                          ✅ Done
+                        </span>
+                      )}
+                      {upload.status === 'error' && (
+                        <button
+                          onClick={() => processUpload(upload)}
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                        >
+                          Retry
                         </button>
                       )}
                       <button
@@ -1268,10 +530,10 @@ const Upload = () => {
                   </div>
                   
                   {/* Progress Bar */}
-                  {upload.progress > 0 && upload.status !== 'completed' && (
+                  {upload.status === 'uploading' && (
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${upload.progress}%` }}
                       ></div>
                     </div>
@@ -1289,9 +551,17 @@ const Upload = () => {
                     <div className="mt-2 p-3 bg-green-50 rounded text-sm">
                       <div className="font-medium text-green-800 mb-1">✅ Upload Berhasil</div>
                       <div className="text-green-700">
-                        📊 {upload.result.stats.newAdded} record baru, 
-                        🚫 {upload.result.stats.duplicatesSkipped} duplikat dilewati,
-                        🔀 {upload.result.stats.duplicatesMerged} record digabung
+                        📊 {upload.result.success} dari {upload.result.total} record berhasil disimpan
+                        {upload.result.duplicates > 0 && (
+                          <div className="mt-1 text-orange-600">
+                            🔄 {upload.result.duplicates} data duplikat dilewati
+                          </div>
+                        )}
+                        {upload.result.errors.length > 0 && (
+                          <div className="mt-1 text-red-600">
+                            ⚠️ {upload.result.errors.length} error
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1310,14 +580,13 @@ const Upload = () => {
               
               <button
                 onClick={() => {
-                  uploadFiles
-                    .filter(u => u.status === 'pending')
-                    .forEach(u => processUpload(u));
+                  const pendingFiles = uploadFiles.filter(u => u.status === 'pending');
+                  pendingFiles.forEach(processUpload);
                 }}
-                className="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+                className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:bg-gray-400"
                 disabled={!uploadFiles.some(u => u.status === 'pending')}
               >
-                Upload All Pending ({uploadFiles.filter(u => u.status === 'pending').length})
+                Upload All ({uploadFiles.filter(u => u.status === 'pending').length})
               </button>
             </div>
           </div>
@@ -1326,62 +595,53 @@ const Upload = () => {
         {/* Help Section */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Butuh Bantuan?
+            Panduan Upload
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FileSpreadsheet className="w-6 h-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Template CSV/Excel</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <FileSpreadsheet className="w-4 h-4 mr-2 text-green-600" />
+                Sample Data
+              </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Download template yang sudah sesuai format sistem
+                Download sample data untuk melihat format yang benar
               </p>
-              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                Download Template
-              </button>
+              <div className="space-y-2">
+                <a 
+                  href="/docs/sample-data/sample_muzakki.csv" 
+                  download
+                  className="inline-block text-green-600 hover:text-green-800 text-sm font-medium"
+                >
+                  📥 Download Sample Muzakki.csv
+                </a>
+                <br />
+                <a 
+                  href="/docs/sample-data/sample_distribusi.csv" 
+                  download
+                  className="inline-block text-green-600 hover:text-green-800 text-sm font-medium"
+                >
+                  📥 Download Sample Distribusi.csv
+                </a>
+              </div>
             </div>
             
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Panduan Duplikat</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Cara menangani duplikat data saat upload
-              </p>
-              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                Lihat Panduan
-              </button>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <AlertCircle className="w-6 h-6 text-purple-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Kontak Support</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Hubungi tim support jika ada masalah
-              </p>
-              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                Hubungi Support
-              </button>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+                <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                Tips Upload
+              </h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Pastikan nama file mengandung "muzakki" atau "distribusi"</li>
+                <li>• Gunakan format tanggal: YYYY-MM-DD (2024-06-15)</li>
+                <li>• Jenis hewan: Sapi, Kambing, atau Domba</li>
+                <li>• Provinsi dan kabupaten menggunakan nama lengkap</li>
+                <li>• Kolom opsional boleh dikosongkan</li>
+              </ul>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Duplicate Review Modal */}
-      {showDuplicateModal && duplicateResult && currentProcessingFile && (
-        <DuplicateReviewModal
-          isOpen={showDuplicateModal}
-          onClose={handleModalClose}
-          result={duplicateResult}
-          onConfirm={handleDuplicateReviewComplete}
-          type={currentProcessingFile.type!}
-        />
-      )}
     </div>
   );
 };

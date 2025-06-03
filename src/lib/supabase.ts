@@ -1,160 +1,186 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Get environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// In Vite, env vars need VITE_ prefix to be accessible in browser
-// But we also check for the non-prefixed version for flexibility
-const getServiceKey = () => {
-  // Check if we have the VITE_ prefixed version first (this will work in browser)
-  if (import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
-    return import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-  }
-  
-  // Fallback to non-prefixed (may not work in browser with Vite)
-  // User should add VITE_SUPABASE_SERVICE_ROLE_KEY to .env.local
-  return import.meta.env.SUPABASE_SERVICE_ROLE_KEY || '';
-};
-
-const supabaseServiceKey = getServiceKey();
-
-// Check if we're in demo mode (invalid URLs or demo credentials)
-const isDemoMode = !supabaseUrl || 
-                   supabaseUrl.includes('demo') || 
-                   supabaseKey.includes('demo') || 
-                   supabaseKey.length < 100; // Real Supabase keys are much longer
-
-// Debug environment variables (only in development)
-if (import.meta.env.DEV) {
-  console.log('🔧 Supabase Environment Check:', {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseKey,
-    hasServiceKey: !!supabaseServiceKey,
-    url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'missing',
-    keyLength: supabaseKey ? supabaseKey.length : 0,
-    serviceKeyLength: supabaseServiceKey ? supabaseServiceKey.length : 0,
-    isDemoMode: isDemoMode,
-    // Debug which env vars are available
-    envVars: {
-      VITE_SUPABASE_SERVICE_ROLE_KEY: !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
-      SUPABASE_SERVICE_ROLE_KEY: !!import.meta.env.SUPABASE_SERVICE_ROLE_KEY
-    }
-  });
-  
-  // Show a helpful message if service key is missing
-  if (!supabaseServiceKey) {
-    console.warn('🚨 IMPORTANT: Service role key not found!');
-    console.warn('📝 Please add to your .env.local file:');
-    console.warn('   VITE_SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here');
-    console.warn('🔍 Vite requires VITE_ prefix for client-side environment variables');
-  }
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
 }
 
-// Create mock clients for demo mode
-const createMockClient = () => ({
-  from: (table: string) => ({
-    select: () => Promise.resolve({ data: [], error: { message: 'Demo mode - no real data' } }),
-    insert: () => Promise.resolve({ data: null, error: { message: 'Demo mode - insert simulated' } }),
-    update: () => Promise.resolve({ data: null, error: { message: 'Demo mode - update simulated' } }),
-    delete: () => Promise.resolve({ data: null, error: { message: 'Demo mode - delete simulated' } }),
-    eq: function() { return this; },
-    in: function() { return this; },
-    limit: function() { return this; },
-    single: function() { return this; }
-  }),
-  auth: {
-    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    signIn: () => Promise.resolve({ data: null, error: { message: 'Demo mode' } }),
-    signOut: () => Promise.resolve({ error: null })
-  }
-});
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Create singleton clients to avoid multiple instances
-let _supabase: any = null;
-let _supabaseAdmin: any = null;
-
-// Regular client for public operations (singleton with unique storage key)
-export const supabase = (() => {
-  if (!_supabase) {
-    if (isDemoMode) {
-      console.log('🎭 Creating demo Supabase client');
-      _supabase = createMockClient();
-    } else {
-      _supabase = createClient(supabaseUrl, supabaseKey, {
-        auth: {
-          storageKey: 'mtt-qurban-public', // Unique storage key to prevent conflicts
-          autoRefreshToken: true,
-          persistSession: false // Disable persistence for upload tool
-        }
-      });
-    }
-  }
-  return _supabase;
-})();
-
-// Service role client for admin operations (singleton with unique storage key)
-export const supabaseAdmin = (() => {
-  if (!_supabaseAdmin) {
-    if (isDemoMode) {
-      console.log('🎭 Creating demo Supabase admin client');
-      _supabaseAdmin = createMockClient();
-    } else if (supabaseServiceKey) {
-      _supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-          storageKey: 'mtt-qurban-admin', // Unique storage key to prevent conflicts
-          autoRefreshToken: false,
-          persistSession: false
-        },
-        db: {
-          schema: 'public'
-        }
-      });
-    } else {
-      console.warn('⚠️ Service role key not found - using regular client for admin operations');
-      _supabaseAdmin = supabase;
-    }
-  }
-  return _supabaseAdmin;
-})();
-
-// Database table names
+// Table names for the system
 export const TABLES = {
   UPLOADERS: 'uploaders',
   MUZAKKI: 'muzakki',
   DISTRIBUSI: 'distribusi',
-  UPLOAD_HISTORY: 'upload_history',
-  REF_PROVINSI: 'ref_provinsi',
-  REF_KABUPATEN: 'ref_kabupaten',
+  UPLOAD_HISTORY: 'upload_history'
 } as const;
 
-// Export demo mode status
-export const isInDemoMode = isDemoMode;
+// Types for the system
+export interface Uploader {
+  id: string;
+  email: string;
+  name: string;
+  mitra_name: string;
+  upload_key: string;
+  is_active: boolean;
+  created_at: string;
+}
 
-// Test connection function
-export const testConnection = async () => {
+export interface Muzakki {
+  id?: string;
+  uploader_id: string;
+  nama_muzakki: string;
+  email?: string;
+  telepon?: string;
+  alamat?: string;
+  provinsi?: string;
+  kabupaten?: string;
+  jenis_hewan: 'Sapi' | 'Kambing' | 'Domba';
+  jumlah_hewan: number;
+  nilai_qurban: number;
+  tanggal_penyerahan?: string;
+  created_at?: string;
+}
+
+export interface Distribusi {
+  id?: string;
+  uploader_id: string;
+  nama_penerima: string;
+  alamat_penerima: string;
+  provinsi?: string;
+  kabupaten?: string;
+  jenis_hewan: 'Sapi' | 'Kambing' | 'Domba';
+  jumlah_daging?: number;
+  tanggal_distribusi: string;
+  foto_distribusi_url?: string;
+  status?: string;
+  catatan?: string;
+  created_at?: string;
+}
+
+export interface UploadHistory {
+  id?: string;
+  uploader_id: string;
+  filename: string;
+  file_type: 'muzakki' | 'distribusi';
+  total_records: number;
+  successful_records: number;
+  failed_records: number;
+  file_size_bytes?: number;
+  upload_status: string;
+  created_at?: string;
+}
+
+// Helper functions
+export const authenticateUploader = async (uploadKey: string): Promise<Uploader | null> => {
   try {
-    console.log('🔍 Testing Supabase connection...');
-    
-    if (isDemoMode) {
-      console.log('🎭 Demo mode active - no real connection test needed');
-      return true;
+    const { data, error } = await supabase
+      .from(TABLES.UPLOADERS)
+      .select('*')
+      .eq('upload_key', uploadKey.trim())
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      console.error('Authentication failed:', error);
+      return null;
     }
-    
-    // Test with a simple query
-    const { data, error } = await supabaseAdmin
-      .from('uploaders')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error('❌ Connection test failed:', error.message);
-      return false;
-    }
-    
-    console.log('✅ Supabase connection successful!');
-    return true;
+
+    return data;
   } catch (error) {
-    console.error('❌ Connection error:', error);
-    return false;
+    console.error('Authentication error:', error);
+    return null;
+  }
+};
+
+export const saveMuzakkiData = async (records: Muzakki[]): Promise<{ success: number; duplicates: number; errors: any[] }> => {
+  try {
+    let successCount = 0;
+    let duplicateCount = 0;
+    const errors: any[] = [];
+
+    // Process records one by one to handle duplicates
+    for (const record of records) {
+      try {
+        const { data, error } = await supabase
+          .from(TABLES.MUZAKKI)
+          .insert([record])
+          .select();
+
+        if (error) {
+          // Check if it's a duplicate constraint error
+          if (error.code === '23505' && error.message.includes('muzakki_nama_muzakki_telepon_key')) {
+            duplicateCount++;
+            console.log(`⚠️ Duplicate skipped: ${record.nama_muzakki} (${record.telepon})`);
+          } else {
+            errors.push(error);
+          }
+        } else if (data && data.length > 0) {
+          successCount++;
+        }
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+
+    return { success: successCount, duplicates: duplicateCount, errors };
+  } catch (error) {
+    console.error('Error saving muzakki data:', error);
+    return { success: 0, duplicates: 0, errors: [error] };
+  }
+};
+
+export const saveDistribusiData = async (records: Distribusi[]): Promise<{ success: number; duplicates: number; errors: any[] }> => {
+  try {
+    let successCount = 0;
+    let duplicateCount = 0;
+    const errors: any[] = [];
+
+    // Process records one by one to handle duplicates
+    for (const record of records) {
+      try {
+        const { data, error } = await supabase
+          .from(TABLES.DISTRIBUSI)
+          .insert([record])
+          .select();
+
+        if (error) {
+          // Check if it's a duplicate constraint error
+          if (error.code === '23505' && error.message.includes('distribusi_nama_penerima_alamat_penerima_key')) {
+            duplicateCount++;
+            console.log(`⚠️ Duplicate skipped: ${record.nama_penerima} (${record.alamat_penerima})`);
+          } else {
+            errors.push(error);
+          }
+        } else if (data && data.length > 0) {
+          successCount++;
+        }
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+
+    return { success: successCount, duplicates: duplicateCount, errors };
+  } catch (error) {
+    console.error('Error saving distribusi data:', error);
+    return { success: 0, duplicates: 0, errors: [error] };
+  }
+};
+
+export const saveUploadHistory = async (record: UploadHistory): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from(TABLES.UPLOAD_HISTORY)
+      .insert([record]);
+
+    if (error) {
+      console.error('Error saving upload history:', error);
+    }
+  } catch (error) {
+    console.error('Error saving upload history:', error);
   }
 }; 
