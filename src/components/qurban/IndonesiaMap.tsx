@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import { MapPin, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+
+// Fix for Leaflet default markers
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 interface ProvinsiData {
   provinsi: string;
@@ -14,13 +24,146 @@ interface IndonesiaMapProps {
   kabupatenCoverage: number;
 }
 
+// Component to handle map controls from inside the map
+const MapController = ({ onMapReady }: { onMapReady: (map: L.Map) => void }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (map) {
+      onMapReady(map);
+    }
+  }, [map, onMapReady]);
+
+  return null;
+};
+
+// Simplified Indonesia GeoJSON (provinces outline) - More realistic coordinates
+const indonesiaGeoJSON = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "DKI Jakarta" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [106.65, -6.05], [106.95, -6.05], [106.95, -6.35], [106.65, -6.35], [106.65, -6.05]
+        ]]
+      }
+    },
+    {
+      "type": "Feature", 
+      "properties": { "name": "Jawa Barat" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [104.5, -5.5], [108.8, -5.5], [108.8, -8.0], [104.5, -8.0], [104.5, -5.5]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Jawa Tengah" },
+      "geometry": {
+        "type": "Polygon", 
+        "coordinates": [[
+          [108.8, -5.8], [111.8, -5.8], [111.8, -8.3], [108.8, -8.3], [108.8, -5.8]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Jawa Timur" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [111.8, -6.2], [114.9, -6.2], [114.9, -8.8], [111.8, -8.8], [111.8, -6.2]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sumatera Utara" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [97.5, 0.5], [100.8, 0.5], [100.8, 4.8], [97.5, 4.8], [97.5, 0.5]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sumatera Barat" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [98.2, -2.5], [101.8, -2.5], [101.8, 1.2], [98.2, 1.2], [98.2, -2.5]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Kalimantan Timur" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [113.5, -2.0], [119.0, -2.0], [119.0, 4.5], [113.5, 4.5], [113.5, -2.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sulawesi Selatan" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [118.5, -8.0], [122.0, -8.0], [122.0, -1.0], [118.5, -1.0], [118.5, -8.0]
+        ]]
+      }
+    }
+  ]
+};
+
+// Custom marker icon with better styling
+const createCustomIcon = (count: number, color: string) => {
+  const size = Math.max(30, Math.min(60, count * 3));
+  return L.divIcon({
+    html: `
+      <div style="
+        background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: ${Math.max(12, size / 4)}px;
+        border: 3px solid white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        animation: pulse 2s infinite;
+      ">${count}</div>
+      <style>
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+      </style>
+    `,
+    className: 'custom-distribution-marker',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2]
+  });
+};
+
 const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ 
   data, 
   totalPenerima, 
   kabupatenCoverage 
 }) => {
-  const [hoveredProvinsi, setHoveredProvinsi] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
+  const [map, setMap] = useState<L.Map | null>(null);
 
   // Create a map for quick lookup
   const dataMap = data.reduce((acc, item) => {
@@ -28,52 +171,123 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
     return acc;
   }, {} as Record<string, ProvinsiData>);
 
-  // Simplified Indonesia provinces with better positioning
-  const provinces = [
-    // Java (main distribution area)
-    { name: 'DKI Jakarta', x: 280, y: 180, width: 15, height: 10, active: true },
-    { name: 'Jawa Barat', x: 260, y: 180, width: 40, height: 15, active: true },
-    { name: 'Jawa Tengah', x: 300, y: 180, width: 45, height: 15, active: true },
-    { name: 'Jawa Timur', x: 345, y: 180, width: 55, height: 15, active: true },
-    
-    // Sumatera
-    { name: 'Sumatera Utara', x: 180, y: 80, width: 35, height: 40, active: false },
-    { name: 'Sumatera Barat', x: 160, y: 120, width: 25, height: 30, active: false },
-    { name: 'Sumatera Selatan', x: 170, y: 150, width: 30, height: 25, active: false },
-    
-    // Kalimantan
-    { name: 'Kalimantan Timur', x: 380, y: 100, width: 40, height: 50, active: false },
-    { name: 'Kalimantan Selatan', x: 360, y: 140, width: 35, height: 30, active: false },
-    
-    // Sulawesi
-    { name: 'Sulawesi Selatan', x: 420, y: 140, width: 30, height: 40, active: false },
-    
-    // Others
-    { name: 'NTT', x: 420, y: 200, width: 25, height: 15, active: false },
-    { name: 'Bali', x: 390, y: 190, width: 15, height: 10, active: false }
-  ];
-
-  const getProvinsiColor = (provinsiName: string, isActive: boolean) => {
-    if (!isActive) return '#e5e7eb'; // Gray for inactive
-    const provinsiData = dataMap[provinsiName];
-    if (!provinsiData) return '#f3f4f6'; // Light gray for no data
-    return provinsiData.color || '#3b82f6'; // Blue default
+  // Province coordinates for markers - Updated to match GeoJSON
+  const provinceCoordinates: Record<string, [number, number]> = {
+    'DKI Jakarta': [-6.2, 106.8],
+    'Jawa Barat': [-6.75, 106.65],
+    'Jawa Tengah': [-7.05, 110.3],
+    'Jawa Timur': [-7.5, 113.35],
+    'Sumatera Utara': [2.65, 99.15],
+    'Sumatera Barat': [-0.65, 100.0],
+    'Kalimantan Timur': [1.25, 116.25],
+    'Sulawesi Selatan': [-4.5, 120.25]
   };
 
-  const getProvinsiOpacity = (provinsiName: string, isActive: boolean) => {
-    if (!isActive) return 0.3;
-    const provinsiData = dataMap[provinsiName];
-    if (!provinsiData) return 0.4;
-    return 0.8;
+  // Style function for GeoJSON features
+  const geoJSONStyle = (feature: any) => {
+    const provinceName = feature?.properties?.name;
+    if (!provinceName) return { fillColor: '#e5e7eb', weight: 2, opacity: 1, color: '#374151', fillOpacity: 0.3 };
+    
+    const provinceData = dataMap[provinceName];
+    
+    return {
+      fillColor: provinceData ? (provinceData.color || '#3b82f6') : '#e5e7eb',
+      weight: 2,
+      opacity: 1,
+      color: '#374151',
+      dashArray: '',
+      fillOpacity: provinceData ? 0.7 : 0.3
+    };
   };
 
-  const handleZoom = (delta: number) => {
-    const newZoom = Math.max(0.8, Math.min(2, zoom + delta));
-    setZoom(newZoom);
+  // Handle zoom controls
+  const handleZoomIn = () => {
+    if (map) {
+      try {
+        map.zoomIn();
+        console.log('Zoomed in, current zoom:', map.getZoom());
+      } catch (error) {
+        console.warn('Error zooming in:', error);
+      }
+    } else {
+      console.warn('Map not available for zoom in');
+    }
   };
 
-  const resetView = () => {
-    setZoom(1);
+  const handleZoomOut = () => {
+    if (map) {
+      try {
+        map.zoomOut();
+        console.log('Zoomed out, current zoom:', map.getZoom());
+      } catch (error) {
+        console.warn('Error zooming out:', error);
+      }
+    } else {
+      console.warn('Map not available for zoom out');
+    }
+  };
+
+  const handleResetView = () => {
+    if (map) {
+      try {
+        map.setView([-2.5, 113.0], 5);
+        console.log('Reset view to center Indonesia');
+      } catch (error) {
+        console.warn('Error resetting view:', error);
+      }
+    } else {
+      console.warn('Map not available for reset');
+    }
+  };
+
+  // Map ready handler
+  const onMapReady = (mapInstance: L.Map) => {
+    setMap(mapInstance);
+    console.log('Map is ready:', mapInstance);
+  };
+
+  // Event handlers for GeoJSON features
+  const onEachFeature = (feature: any, layer: any) => {
+    if (!feature?.properties?.name) return;
+    
+    const provinceName = feature.properties.name;
+    const provinceData = dataMap[provinceName];
+    
+    layer.on({
+      mouseover: (e: any) => {
+        const layer = e.target;
+        layer.setStyle({
+          weight: 4,
+          color: '#666',
+          fillOpacity: 0.9
+        });
+      },
+      mouseout: (e: any) => {
+        const layer = e.target;
+        layer.setStyle(geoJSONStyle(feature));
+      }
+    });
+
+    if (provinceData) {
+      layer.bindPopup(`
+        <div style="text-align: center; padding: 8px; min-width: 150px;">
+          <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 16px;">${provinceName}</h3>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+            📍 ${provinceData.count} penerima<br>
+            📊 ${provinceData.percentage}% dari total
+          </p>
+        </div>
+      `);
+    } else {
+      layer.bindPopup(`
+        <div style="text-align: center; padding: 8px;">
+          <h3 style="margin: 0 0 8px 0; color: #1f2937;">${provinceName}</h3>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+            Belum ada data distribusi
+          </p>
+        </div>
+      `);
+    }
   };
 
   return (
@@ -93,21 +307,21 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
         {/* Map Controls */}
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => handleZoom(0.2)}
+            onClick={handleZoomIn}
             className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             title="Zoom In"
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleZoom(-0.2)}
+            onClick={handleZoomOut}
             className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             title="Zoom Out"
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
-            onClick={resetView}
+            onClick={handleResetView}
             className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
             title="Reset View"
           >
@@ -117,134 +331,84 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
       </div>
 
       {/* Map Container */}
-      <div className="relative h-[400px] bg-gradient-to-br from-blue-50 to-green-50 rounded-lg border-2 border-blue-200 overflow-hidden">
-        
-        {/* SVG Map */}
-        <svg
-          viewBox="0 0 600 300"
-          className="w-full h-full"
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: 'center'
-          }}
+      <div className="relative h-[500px] rounded-lg overflow-hidden border-2 border-blue-200">
+        <MapContainer
+          center={[-2.5, 113.0]}
+          zoom={5}
+          style={{ height: '100%', width: '100%' }}
         >
-          {/* Ocean Background */}
-          <rect width="600" height="300" fill="#bfdbfe" opacity="0.2" />
+          <MapController onMapReady={onMapReady} />
           
-          {/* Islands/Provinces */}
-          {provinces.map((province) => (
-            <g key={province.name}>
-              {/* Province Shape */}
-              <rect
-                x={province.x}
-                y={province.y}
-                width={province.width}
-                height={province.height}
-                fill={getProvinsiColor(province.name, province.active)}
-                opacity={getProvinsiOpacity(province.name, province.active)}
-                stroke="#374151"
-                strokeWidth="1"
-                rx="3"
-                className="transition-all duration-300 cursor-pointer hover:stroke-2 hover:opacity-100"
-                onMouseEnter={() => setHoveredProvinsi(province.name)}
-                onMouseLeave={() => setHoveredProvinsi(null)}
-              />
-              
-              {/* Province Label */}
-              {dataMap[province.name] && province.active && (
-                <text
-                  x={province.x + province.width / 2}
-                  y={province.y + province.height / 2}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="10"
-                  fill="#1f2937"
-                  className="pointer-events-none font-medium"
-                >
-                  {dataMap[province.name].count}
-                </text>
-              )}
-              
-              {/* Province Name */}
-              {province.active && (
-                <text
-                  x={province.x + province.width / 2}
-                  y={province.y + province.height + 12}
-                  textAnchor="middle"
-                  fontSize="8"
-                  fill="#6b7280"
-                  className="pointer-events-none"
-                >
-                  {province.name}
-                </text>
-              )}
-            </g>
-          ))}
+          {/* Base Map Tiles */}
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
           
-          {/* Distribution Points */}
-          {data.slice(0, 4).map((item, index) => {
-            const province = provinces.find(p => p.name === item.provinsi && p.active);
-            if (!province) return null;
-            
+          {/* Distribution Markers */}
+          {data.map((item, index) => {
+            const coordinates = provinceCoordinates[item.provinsi];
+            if (!coordinates) return null;
+
             return (
-              <circle
-                key={`point-${index}`}
-                cx={province.x + province.width / 2}
-                cy={province.y + province.height / 2}
-                r={Math.max(3, Math.min(8, item.count))}
-                fill="#ef4444"
-                opacity="0.7"
-                className="animate-pulse"
-              />
+              <Marker
+                key={index}
+                position={coordinates}
+                icon={createCustomIcon(item.count, item.color || '#ef4444')}
+              >
+                <Popup>
+                  <div style={{ textAlign: 'center', padding: '8px' }}>
+                    <h3 style={{ margin: '0 0 8px 0', color: '#1f2937' }}>{item.provinsi}</h3>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
+                      📍 {item.count} penerima<br />
+                      📊 {item.percentage}% dari total distribusi
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
             );
           })}
-        </svg>
+        </MapContainer>
 
-        {/* Hover Tooltip */}
-        {hoveredProvinsi && dataMap[hoveredProvinsi] && (
-          <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-3 border z-20">
-            <div className="text-sm font-semibold text-gray-900">
-              {hoveredProvinsi}
-            </div>
-            <div className="text-xs text-gray-600">
-              {dataMap[hoveredProvinsi].count} penerima ({dataMap[hoveredProvinsi].percentage}%)
-            </div>
-          </div>
-        )}
-
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
-          <div className="text-xs font-semibold text-gray-700 mb-2">Area Distribusi</div>
-          <div className="space-y-1">
+        {/* Legend Overlay */}
+        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border z-[1000]">
+          <div className="text-xs font-bold text-gray-700 mb-3">Keterangan Peta</div>
+          <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span className="text-xs text-gray-600">Aktif</span>
+              <div className="w-4 h-4 bg-red-500 rounded-full shadow-sm"></div>
+              <span className="text-xs text-gray-600">Titik Distribusi</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-gray-300 rounded"></div>
-              <span className="text-xs text-gray-600">Belum aktif</span>
+              <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded-full animate-pulse"></div>
+              <span className="text-xs text-gray-600">Ukuran = Jumlah Penerima</span>
             </div>
           </div>
         </div>
 
         {/* Statistics Overlay */}
-        <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+        <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border z-[1000]">
           <div className="text-center">
-            <div className="text-xl font-bold text-blue-600">
-              {totalPenerima}
+            <div className="text-2xl font-bold text-blue-600 mb-1">
+              {totalPenerima.toLocaleString('id-ID')}
             </div>
-            <div className="text-xs text-gray-600">Total Penerima</div>
+            <div className="text-xs text-gray-600 mb-2">Total Penerima</div>
+            <div className="text-lg font-semibold text-green-600">
+              {kabupatenCoverage}
+            </div>
+            <div className="text-xs text-gray-600">Kabupaten</div>
           </div>
         </div>
       </div>
 
       {/* Map Info */}
       <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-        <div>
-          📍 Fokus distribusi di wilayah Jawa • 🔍 Zoom untuk detail
+        <div className="flex items-center space-x-4">
+          <span>🗺️ Peta interaktif Indonesia</span>
+          <span>📍 Klik titik merah untuk detail distribusi</span>
+          <span>🔍 Gunakan mouse untuk navigasi</span>
         </div>
-        <div>
-          {data.filter(d => provinces.find(p => p.name === d.provinsi && p.active)).length} provinsi aktif
+        <div className="text-blue-600 font-medium">
+          {data.length} titik distribusi
         </div>
       </div>
     </div>

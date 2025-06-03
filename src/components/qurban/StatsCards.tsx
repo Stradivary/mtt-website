@@ -79,8 +79,8 @@ const StatsCards: React.FC<StatsCardsProps> = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[...Array(4)].map((_, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+        {[...Array(5)].map((_, index) => (
           <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
             <div className="animate-pulse">
               <div className="flex items-center justify-between mb-4">
@@ -98,45 +98,48 @@ const StatsCards: React.FC<StatsCardsProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
       {/* Main Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cards.map((card, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center`}>
-                <card.icon className="w-6 h-6 text-white" />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-600">{card.title}</h3>
-              <div className="flex items-end space-x-2">
-                <span className="text-3xl font-bold text-gray-900">{card.value}</span>
-                <span className="text-sm text-gray-500 pb-1">{card.subtitle}</span>
-              </div>
+      {cards.map((card, index) => (
+        <div
+          key={index}
+          className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center`}>
+              <card.icon className="w-6 h-6 text-white" />
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Animal Breakdown Card - Only if data exists */}
+          {/* Content */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-600">{card.title}</h3>
+            <div className="space-y-1">
+              <div className="text-3xl font-bold text-gray-900 leading-none whitespace-nowrap">{card.value}</div>
+              <div className="text-sm text-gray-500">{card.subtitle}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Animal Breakdown Card - Integrated into the same row */}
       {Object.keys(animalBreakdown).length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Jenis Hewan Qurban</h3>
-          <div className="grid grid-cols-3 gap-6">
-            {Object.entries(animalBreakdown).map(([jenis, count]) => (
-              <div key={jenis} className="text-center">
-                <div className="text-4xl mb-2">{getAnimalIcon(jenis)}</div>
-                <div className="text-2xl font-bold text-gray-900">{count}</div>
-                <div className="text-sm text-gray-600">{jenis}</div>
-              </div>
-            ))}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
+          {/* Content */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-gray-600 mb-4">Jenis Hewan Qurban</h3>
+            <div className="space-y-3">
+              {Object.entries(animalBreakdown).map(([jenis, count]) => (
+                <div key={jenis} className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">{getAnimalIcon(jenis)}</span>
+                    <span className="text-base font-medium text-gray-700">{jenis}</span>
+                  </div>
+                  <span className="text-2xl font-bold text-gray-900">{count}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@
     "@supabase/supabase-js": "^2.49.9",
     "autoprefixer": "^10.4.21",
     "dotenv": "^16.5.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.511.0",
     "postcss": "^8.5.4",
     "prop-types": "^15.8.1",
@@ -25,11 +26,13 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.57.0",
     "react-intersection-observer": "^9.16.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.6.1",
     "tailwindcss": "^3.4.17",
     "zod": "^3.25.49"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.18",
     "@vitejs/plugin-react": "^4.5.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
