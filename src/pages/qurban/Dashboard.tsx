@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Users, MapPin, TrendingUp, Clock, RefreshCw, Filter, Calendar, Download } from 'lucide-react';
 import EnhancedStatsCards from '../../components/qurban/EnhancedStatsCards';
-import InteractiveIndonesiaMap from '../../components/qurban/InteractiveIndonesiaMap';
+// TEMPORARILY DISABLED: InteractiveIndonesiaMap (react-simple-maps compatibility issue)
+// import InteractiveIndonesiaMap from '../../components/qurban/InteractiveIndonesiaMap';
 import SupabaseTest from '../../components/qurban/SupabaseTest';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
@@ -253,13 +254,8 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <InteractiveIndonesiaMap 
-                data={kabupatenData} 
-                loading={loading}
-                onKabupatenClick={(kabupaten) => {
-                  console.log('Clicked:', kabupaten);
-                }}
-              />
+              {/* Placeholder for InteractiveIndonesiaMap */}
+              <div className="h-[300px] bg-gray-200 rounded-lg"></div>
             </div>
           </div>
 
