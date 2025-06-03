@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Upload as UploadIcon, FileSpreadsheet, AlertCircle, CheckCircle, X, Loader2 } from 'lucide-react';
 import { DuplicateReviewModal } from '../../components/DuplicateReviewModal';
@@ -22,6 +22,10 @@ const Upload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [loginError, setLoginError] = useState<string>('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  // Upload queue management
+  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   
   // Duplicate handling states
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -48,7 +52,7 @@ const Upload = () => {
           is_active: true
         };
         
-        setIsAuthenticated(true);
+    setIsAuthenticated(true);
         setUploader(demoUploader);
         console.log('✅ Demo mode authenticated as:', demoUploader.name, '(' + demoUploader.mitra_name + ')');
         return;
@@ -158,90 +162,126 @@ const Upload = () => {
     }
   }, [handleFilesDrop]);
 
-  // Upload processing with duplicate detection
-  const processUpload = async (upload: FileUpload) => {
-    if (!upload.type) {
-      updateUploadStatus(upload.id, 'error', 'Cannot determine file type from filename');
-      return;
-    }
-
+  // Helper function to process upload with specific config
+  const processUploadWithConfig = async (
+    upload: FileUpload, 
+    fileData: any[], 
+    existingData: any[], 
+    config: DuplicateDetectionConfig
+  ) => {
     try {
-      // Step 1: Parse file data
-      updateUploadStatus(upload.id, 'uploading', undefined, 25);
-      const fileData = await parseFileData(upload.file);
+      updateUploadStatus(upload.id, 'processing');
       
-      // Step 2: Fetch existing data from database
-      updateUploadStatus(upload.id, 'uploading', undefined, 50);
-      const existingData = await fetchExistingData(upload.type);
-      
-      // Step 3: Detect duplicates
-      updateUploadStatus(upload.id, 'detecting_duplicates', undefined, 75);
       const processor = new UploadProcessor();
-      const config: DuplicateDetectionConfig = {
-        strictMode: false, // Enable fuzzy matching
-        action: 'prompt', // Always prompt for user decision
-        tolerance: 0.8
-      };
-
-      let result: ProcessedUploadResult;
+      let finalResult: ProcessedUploadResult;
+      
       if (upload.type === 'muzakki') {
-        result = await processor.processMuzakkiUpload(fileData, existingData, config);
+        finalResult = await processor.processMuzakkiUpload(fileData, existingData, config);
       } else {
-        result = await processor.processDistribusiUpload(fileData, existingData, config);
+        finalResult = await processor.processDistribusiUpload(fileData, existingData, config);
       }
-
-      // Step 4: Check if duplicates found
-      const totalDuplicates = result.duplicates.exact.length + 
-                             result.duplicates.fuzzy.length + 
-                             result.duplicates.partial.length;
-
-      if (totalDuplicates > 0) {
-        // Show duplicate review modal
-        setCurrentProcessingFile(upload);
-        setDuplicateResult(result);
-        updateUploadStatus(upload.id, 'reviewing_duplicates', undefined, 100);
-        setShowDuplicateModal(true);
-      } else {
-        // No duplicates, proceed directly
-        await finalizeUpload(upload, result);
-      }
-
+      
+      await finalizeUpload(upload, finalResult);
     } catch (error) {
-      updateUploadStatus(upload.id, 'error', error instanceof Error ? error.message : 'Upload failed');
+      updateUploadStatus(
+        upload.id, 
+        'error', 
+        error instanceof Error ? error.message : 'Processing failed'
+      );
     }
+  };
+
+  // Upload processing with duplicate detection (now adds to queue)
+  const processUpload = async (upload: FileUpload) => {
+    console.log(`📥 Adding ${upload.file.name} to upload queue`);
+    
+    // Add to queue if not already there
+    setUploadQueue(prev => {
+      if (!prev.includes(upload.id)) {
+        return [...prev, upload.id];
+      }
+      return prev;
+    });
+  };
+
+  // Trigger queue processing when queue changes
+  useEffect(() => {
+    if (uploadQueue.length > 0 && !isProcessingQueue) {
+      console.log(`🎯 Queue has ${uploadQueue.length} files, starting processing...`);
+      processUploadQueue();
+    }
+  }, [uploadQueue, isProcessingQueue]);
+
+  // Cleanup function to reset modal states
+  const resetModalStates = () => {
+    setShowDuplicateModal(false);
+    setCurrentProcessingFile(null);
+    setDuplicateResult(null);
   };
 
   // Handle duplicate review completion
   const handleDuplicateReviewComplete = async (finalConfig: DuplicateDetectionConfig) => {
-    if (!currentProcessingFile || !duplicateResult) return;
+    if (!currentProcessingFile || !duplicateResult) {
+      console.warn('⚠️ No file or result to process in duplicate review');
+      resetModalStates();
+      return;
+    }
 
     try {
-      setShowDuplicateModal(false);
-      updateUploadStatus(currentProcessingFile.id, 'processing');
+      // Store current file info before resetting states
+      const fileToProcess = currentProcessingFile;
+      const resultToProcess = duplicateResult;
+      
+      console.log(`🔄 Processing duplicate review for: ${fileToProcess.file.name}`);
+      
+      // Reset modal states FIRST to allow queue to continue
+      resetModalStates();
+      
+      // Update status to processing
+      updateUploadStatus(fileToProcess.id, 'processing');
 
       // Reprocess with final configuration
       const processor = new UploadProcessor();
-      const existingData = await fetchExistingData(currentProcessingFile.type!);
-      const fileData = await parseFileData(currentProcessingFile.file);
+      const existingData = await fetchExistingData(fileToProcess.type!);
+      const fileData = await parseFileData(fileToProcess.file);
 
       let finalResult: ProcessedUploadResult;
-      if (currentProcessingFile.type === 'muzakki') {
+      if (fileToProcess.type === 'muzakki') {
         finalResult = await processor.processMuzakkiUpload(fileData, existingData, finalConfig);
       } else {
         finalResult = await processor.processDistribusiUpload(fileData, existingData, finalConfig);
       }
 
-      await finalizeUpload(currentProcessingFile, finalResult);
+      await finalizeUpload(fileToProcess, finalResult);
       
-      setCurrentProcessingFile(null);
-      setDuplicateResult(null);
+      console.log(`✅ Completed duplicate review processing for: ${fileToProcess.file.name}`);
+      
     } catch (error) {
-      updateUploadStatus(
-        currentProcessingFile.id, 
-        'error', 
-        error instanceof Error ? error.message : 'Failed to process duplicates'
-      );
+      console.error('❌ Error processing duplicate review:', error);
+      if (currentProcessingFile) {
+        updateUploadStatus(
+          currentProcessingFile.id, 
+          'error', 
+          error instanceof Error ? error.message : 'Failed to process duplicates'
+        );
+      }
+      
+      // Ensure states are reset even on error
+      resetModalStates();
     }
+  };
+
+  // Handle modal close (cancel)
+  const handleModalClose = () => {
+    if (currentProcessingFile) {
+      console.log(`❌ User cancelled duplicate review for: ${currentProcessingFile.file.name}`);
+      // Reset upload status to pending so user can retry
+      updateUploadStatus(currentProcessingFile.id, 'pending');
+    }
+    resetModalStates();
+    
+    // Continue processing queue after modal close
+    console.log('🔄 Modal closed, queue will continue processing...');
   };
 
   // Finalize upload to database
@@ -568,52 +608,44 @@ const Upload = () => {
         }
       }
       
-      // Normalize kabupaten/kota name variations
-      if (normalized.nama_kabupaten || normalized.alamat) {
-        const location = (normalized.nama_kabupaten || normalized.alamat || '').toLowerCase().trim();
+      // Normalize kabupaten/kota name variations based on correct column names
+      // For muzakki: use 'alamat', for distribusi: use 'alamat_penerima'
+      const locationField = normalized.alamat_penerima || normalized.alamat || '';
+      if (locationField) {
+        const location = locationField.toLowerCase().trim();
         
         // Jakarta variations
         if (location.includes('jakarta selatan') || location.includes('jaksel')) {
           normalized.kode_kabupaten = '3171';
-          normalized.nama_kabupaten = 'Jakarta Selatan';
           normalized.kode_provinsi = '31';
         } else if (location.includes('jakarta timur') || location.includes('jaktim')) {
           normalized.kode_kabupaten = '3172';
-          normalized.nama_kabupaten = 'Jakarta Timur';
           normalized.kode_provinsi = '31';
         } else if (location.includes('jakarta pusat') || location.includes('jakpus')) {
           normalized.kode_kabupaten = '3173';
-          normalized.nama_kabupaten = 'Jakarta Pusat';
           normalized.kode_provinsi = '31';
         } else if (location.includes('jakarta barat') || location.includes('jakbar')) {
           normalized.kode_kabupaten = '3174';
-          normalized.nama_kabupaten = 'Jakarta Barat';
           normalized.kode_provinsi = '31';
         } else if (location.includes('jakarta utara') || location.includes('jakut')) {
           normalized.kode_kabupaten = '3175';
-          normalized.nama_kabupaten = 'Jakarta Utara';
           normalized.kode_provinsi = '31';
         
         // Jawa Timur variations
         } else if (location.includes('surabaya') || location.includes('sby')) {
           normalized.kode_kabupaten = '3578';
-          normalized.nama_kabupaten = 'Kota Surabaya';
           normalized.kode_provinsi = '35';
         } else if (location.includes('gresik')) {
           normalized.kode_kabupaten = '3525';
-          normalized.nama_kabupaten = 'Kabupaten Gresik';
           normalized.kode_provinsi = '35';
         } else if (location.includes('sidoarjo')) {
           normalized.kode_kabupaten = '3515';
-          normalized.nama_kabupaten = 'Kabupaten Sidoarjo';
           normalized.kode_provinsi = '35';
         } else if (location.includes('malang') && (location.includes('kota') || location.includes('kab'))) {
           if (location.includes('kota')) {
             normalized.kode_kabupaten = '3573';
-            normalized.nama_kabupaten = 'Kota Malang';
           } else {
             normalized.kode_kabupaten = '3507';
-            normalized.nama_kabupaten = 'Kabupaten Malang';
           }
           normalized.kode_provinsi = '35';
         
@@ -621,35 +653,27 @@ const Upload = () => {
         } else if (location.includes('bogor')) {
           if (location.includes('kota')) {
             normalized.kode_kabupaten = '3271';
-            normalized.nama_kabupaten = 'Kota Bogor';
           } else {
             normalized.kode_kabupaten = '3201';
-            normalized.nama_kabupaten = 'Kabupaten Bogor';
           }
           normalized.kode_provinsi = '32';
         } else if (location.includes('bandung')) {
           if (location.includes('kota')) {
             normalized.kode_kabupaten = '3273';
-            normalized.nama_kabupaten = 'Kota Bandung';
           } else if (location.includes('barat')) {
             normalized.kode_kabupaten = '3217';
-            normalized.nama_kabupaten = 'Kabupaten Bandung Barat';
           } else {
             normalized.kode_kabupaten = '3204';
-            normalized.nama_kabupaten = 'Kabupaten Bandung';
           }
           normalized.kode_provinsi = '32';
         } else if (location.includes('depok')) {
           normalized.kode_kabupaten = '3276';
-          normalized.nama_kabupaten = 'Kota Depok';
           normalized.kode_provinsi = '32';
         } else if (location.includes('bekasi')) {
           if (location.includes('kota')) {
             normalized.kode_kabupaten = '3275';
-            normalized.nama_kabupaten = 'Kota Bekasi';
           } else {
             normalized.kode_kabupaten = '3216';
-            normalized.nama_kabupaten = 'Kabupaten Bekasi';
           }
           normalized.kode_provinsi = '32';
         
@@ -657,31 +681,25 @@ const Upload = () => {
         } else if (location.includes('semarang')) {
           if (location.includes('kota')) {
             normalized.kode_kabupaten = '3374';
-            normalized.nama_kabupaten = 'Kota Semarang';
           } else {
             normalized.kode_kabupaten = '3304';
-            normalized.nama_kabupaten = 'Kabupaten Semarang';
           }
           normalized.kode_provinsi = '33';
         } else if (location.includes('solo') || location.includes('surakarta')) {
           normalized.kode_kabupaten = '3372';
-          normalized.nama_kabupaten = 'Kota Surakarta';
           normalized.kode_provinsi = '33';
         
         // Yogyakarta variations
         } else if (location.includes('yogyakarta') || location.includes('jogja') || location.includes('yogya')) {
           if (location.includes('kota') || !location.includes('kabupaten')) {
             normalized.kode_kabupaten = '3471';
-            normalized.nama_kabupaten = 'Kota Yogyakarta';
           }
           normalized.kode_provinsi = '34';
         } else if (location.includes('bantul')) {
           normalized.kode_kabupaten = '3402';
-          normalized.nama_kabupaten = 'Kabupaten Bantul';
           normalized.kode_provinsi = '34';
         } else if (location.includes('sleman')) {
           normalized.kode_kabupaten = '3404';
-          normalized.nama_kabupaten = 'Kabupaten Sleman';
           normalized.kode_provinsi = '34';
         }
       }
@@ -846,6 +864,139 @@ const Upload = () => {
       case 'completed': return 'Selesai';
       case 'error': return 'Error';
       default: return 'Unknown';
+    }
+  };
+
+  // Queue processor - handles files sequentially
+  const processUploadQueue = async () => {
+    if (isProcessingQueue || uploadQueue.length === 0) return;
+    
+    setIsProcessingQueue(true);
+    console.log(`🔄 Starting queue processing. ${uploadQueue.length} files in queue.`);
+    
+    while (uploadQueue.length > 0) {
+      const fileId = uploadQueue[0];
+      const fileToProcess = uploadFiles.find(f => f.id === fileId);
+      
+      if (!fileToProcess) {
+        console.warn(`⚠️ File with ID ${fileId} not found, removing from queue`);
+        setUploadQueue(prev => prev.slice(1));
+        continue;
+      }
+      
+      if (fileToProcess.status !== 'pending') {
+        console.log(`⏭️ Skipping ${fileToProcess.file.name} - status: ${fileToProcess.status}`);
+        setUploadQueue(prev => prev.slice(1));
+        continue;
+      }
+      
+      console.log(`🚀 Processing file from queue: ${fileToProcess.file.name}`);
+      
+      try {
+        await processUploadInternal(fileToProcess);
+        
+        // Wait for modal to be closed if it was opened
+        if (showDuplicateModal) {
+          console.log(`⏳ Waiting for modal to close for ${fileToProcess.file.name}...`);
+          // Wait until modal is closed
+          await new Promise<void>((resolve) => {
+            const checkModal = () => {
+              if (!showDuplicateModal) {
+                console.log(`✅ Modal closed for ${fileToProcess.file.name}, continuing queue`);
+                resolve();
+              } else {
+                setTimeout(checkModal, 500);
+              }
+            };
+            checkModal();
+          });
+        }
+        
+      } catch (error) {
+        console.error(`❌ Error processing ${fileToProcess.file.name}:`, error);
+      }
+      
+      // Remove processed file from queue
+      setUploadQueue(prev => prev.slice(1));
+      
+      // Small delay between files to ensure clean state
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    setIsProcessingQueue(false);
+    console.log('✅ Queue processing completed');
+  };
+
+  // Process single file (internal)
+  const processUploadInternal = async (upload: FileUpload): Promise<void> => {
+    if (!upload.type) {
+      updateUploadStatus(upload.id, 'error', 'Cannot determine file type from filename');
+      return;
+    }
+
+    console.log(`🚀 Starting upload processing for: ${upload.file.name} (${upload.type})`);
+
+    try {
+      // Step 1: Parse file data
+      updateUploadStatus(upload.id, 'uploading', undefined, 25);
+      const fileData = await parseFileData(upload.file);
+      console.log(`📄 Parsed ${fileData.length} records from ${upload.file.name}`);
+      
+      // Step 2: Fetch existing data from database
+      updateUploadStatus(upload.id, 'uploading', undefined, 50);
+      const existingData = await fetchExistingData(upload.type);
+      console.log(`💾 Found ${existingData.length} existing ${upload.type} records in database`);
+      
+      // Step 3: Detect duplicates
+      updateUploadStatus(upload.id, 'detecting_duplicates', undefined, 75);
+      const processor = new UploadProcessor();
+      
+      // Enhanced configuration for smarter handling
+      const config: DuplicateDetectionConfig = {
+        strictMode: false, // Enable fuzzy matching
+        action: 'prompt', // Always prompt for user decision
+        tolerance: 0.8
+      };
+
+      let result: ProcessedUploadResult;
+      if (upload.type === 'muzakki') {
+        result = await processor.processMuzakkiUpload(fileData, existingData, config);
+      } else {
+        result = await processor.processDistribusiUpload(fileData, existingData, config);
+      }
+
+      // Step 4: Smart duplicate handling
+      const totalDuplicates = result.duplicates.exact.length + 
+                             result.duplicates.fuzzy.length + 
+                             result.duplicates.partial.length;
+      
+      const newRecordsCount = result.newRecords.length;
+      const duplicateRatio = totalDuplicates / (totalDuplicates + newRecordsCount);
+      
+      console.log(`📊 Upload Analysis for ${upload.file.name}: ${newRecordsCount} new, ${totalDuplicates} duplicates (${Math.round(duplicateRatio * 100)}% duplicates)`);
+
+      // If high percentage of new records or user needs to review, show modal
+      if (totalDuplicates > 0 && (duplicateRatio <= 0.8 || newRecordsCount === 0)) {
+        console.log(`🔍 ${upload.file.name} needs duplicate review (${totalDuplicates} duplicates found)`);
+        
+        // Since we have queue system, we can safely show modal without conflicts
+        console.log(`📋 Showing duplicate review modal for ${upload.file.name}`);
+        setCurrentProcessingFile(upload);
+        setDuplicateResult(result);
+        updateUploadStatus(upload.id, 'reviewing_duplicates', undefined, 100);
+        setShowDuplicateModal(true);
+        
+        // Return here - queue will wait for modal to close
+        return;
+      } else {
+        // No duplicates, proceed directly
+        console.log(`✅ No duplicates found for ${upload.file.name}, proceeding directly`);
+        await finalizeUpload(upload, result);
+      }
+
+    } catch (error) {
+      console.error(`❌ Upload processing failed for ${upload.file.name}:`, error);
+      updateUploadStatus(upload.id, 'error', error instanceof Error ? error.message : 'Upload failed');
     }
   };
 
@@ -1225,7 +1376,7 @@ const Upload = () => {
       {showDuplicateModal && duplicateResult && currentProcessingFile && (
         <DuplicateReviewModal
           isOpen={showDuplicateModal}
-          onClose={() => setShowDuplicateModal(false)}
+          onClose={handleModalClose}
           result={duplicateResult}
           onConfirm={handleDuplicateReviewComplete}
           type={currentProcessingFile.type!}

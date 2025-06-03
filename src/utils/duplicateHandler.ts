@@ -369,32 +369,36 @@ export class UploadProcessor {
         const duplicateResult = detector.detectDuplicate(record);
         
         if (duplicateResult.isDuplicate) {
-          // Handle based on match type and configured action
+          // Store duplicate information for later processing
+          const duplicateInfo = { new: record, existing: duplicateResult.existingRecord };
+          
           switch (duplicateResult.matchType) {
             case 'exact':
-              result.duplicates.exact.push({ new: record, existing: duplicateResult.existingRecord });
-              result.stats.duplicatesSkipped++;
+              result.duplicates.exact.push(duplicateInfo);
               break;
             case 'fuzzy':
-              result.duplicates.fuzzy.push({ new: record, existing: duplicateResult.existingRecord });
-              if (config.action === 'merge') {
-                result.newRecords.push(this.mergeMuzakkiRecords(record, duplicateResult.existingRecord));
-                result.stats.duplicatesMerged++;
-              } else {
-                result.stats.duplicatesSkipped++;
-              }
+              result.duplicates.fuzzy.push(duplicateInfo);
               break;
             case 'partial':
-              result.duplicates.partial.push({ new: record, existing: duplicateResult.existingRecord });
-              if (config.action === 'update') {
-                result.newRecords.push(record);
-                result.stats.duplicatesUpdated++;
-              } else {
-                result.stats.duplicatesSkipped++;
-              }
+              result.duplicates.partial.push(duplicateInfo);
               break;
           }
+
+          // Handle based on configured action
+          if (config.action === 'prompt') {
+            // Don't process duplicates, let UI handle them
+            // The records stay in duplicates arrays for user review
+          } else if (config.action === 'skip') {
+            result.stats.duplicatesSkipped++;
+          } else if (config.action === 'merge') {
+            result.newRecords.push(this.mergeMuzakkiRecords(record, duplicateResult.existingRecord));
+            result.stats.duplicatesMerged++;
+          } else if (config.action === 'update') {
+            result.newRecords.push(record);
+            result.stats.duplicatesUpdated++;
+          }
         } else {
+          // Not a duplicate, add to new records
           result.newRecords.push(record);
           result.stats.newAdded++;
         }
@@ -440,32 +444,36 @@ export class UploadProcessor {
         const duplicateResult = detector.detectDuplicate(record);
         
         if (duplicateResult.isDuplicate) {
-          // Handle based on match type and configured action
+          // Store duplicate information for later processing
+          const duplicateInfo = { new: record, existing: duplicateResult.existingRecord };
+          
           switch (duplicateResult.matchType) {
             case 'exact':
-              result.duplicates.exact.push({ new: record, existing: duplicateResult.existingRecord });
-              result.stats.duplicatesSkipped++;
+              result.duplicates.exact.push(duplicateInfo);
               break;
             case 'fuzzy':
-              result.duplicates.fuzzy.push({ new: record, existing: duplicateResult.existingRecord });
-              if (config.action === 'merge') {
-                result.newRecords.push(this.mergeDistribusiRecords(record, duplicateResult.existingRecord));
-                result.stats.duplicatesMerged++;
-              } else {
-                result.stats.duplicatesSkipped++;
-              }
+              result.duplicates.fuzzy.push(duplicateInfo);
               break;
             case 'partial':
-              result.duplicates.partial.push({ new: record, existing: duplicateResult.existingRecord });
-              if (config.action === 'update') {
-                result.newRecords.push(record);
-                result.stats.duplicatesUpdated++;
-              } else {
-                result.stats.duplicatesSkipped++;
-              }
+              result.duplicates.partial.push(duplicateInfo);
               break;
           }
+
+          // Handle based on configured action
+          if (config.action === 'prompt') {
+            // Don't process duplicates, let UI handle them
+            // The records stay in duplicates arrays for user review
+          } else if (config.action === 'skip') {
+            result.stats.duplicatesSkipped++;
+          } else if (config.action === 'merge') {
+            result.newRecords.push(this.mergeDistribusiRecords(record, duplicateResult.existingRecord));
+            result.stats.duplicatesMerged++;
+          } else if (config.action === 'update') {
+            result.newRecords.push(record);
+            result.stats.duplicatesUpdated++;
+          }
         } else {
+          // Not a duplicate, add to new records
           result.newRecords.push(record);
           result.stats.newAdded++;
         }

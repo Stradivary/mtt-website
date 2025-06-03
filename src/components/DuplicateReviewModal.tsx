@@ -134,6 +134,22 @@ export const DuplicateReviewModal: React.FC<DuplicateReviewModalProps> = ({
           <p className="text-sm text-gray-600 mt-1">
             Found {getTotalDuplicates()} potential duplicates in {result.stats.totalProcessed} records
           </p>
+          
+          {/* Quick summary and suggestion */}
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <div className="text-yellow-600 mt-0.5">💡</div>
+              <div className="text-sm">
+                <p className="font-medium text-yellow-800">Quick Suggestion:</p>
+                <p className="text-yellow-700">
+                  {getTotalDuplicates() === result.stats.totalProcessed 
+                    ? "All records appear to be duplicates. This file may have been uploaded before. Click 'Skip All Duplicates' to continue."
+                    : `${result.stats.newAdded} new records found. Review duplicates below or skip them to process only new records.`
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[60vh]">
@@ -261,7 +277,21 @@ export const DuplicateReviewModal: React.FC<DuplicateReviewModalProps> = ({
           <div className="space-x-3">
             <button
               onClick={() => {
-                // Apply actions and proceed
+                // Quick action: Skip all duplicates
+                const skipAllConfig = {
+                  ...config,
+                  action: 'skip' as const
+                };
+                onConfirm(skipAllConfig);
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Skip All Duplicates
+            </button>
+            
+            <button
+              onClick={() => {
+                // Apply individual actions
                 const finalConfig = {
                   ...config,
                   selectedActions: selectedAction
@@ -270,7 +300,7 @@ export const DuplicateReviewModal: React.FC<DuplicateReviewModalProps> = ({
               }}
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Apply Actions & Continue
+              Apply Custom Actions
             </button>
           </div>
         </div>

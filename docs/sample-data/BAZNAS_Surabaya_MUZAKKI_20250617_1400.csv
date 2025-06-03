@@ -1,16 +1,18 @@
 nama_muzakki,email,telepon,alamat,kode_provinsi,kode_kabupaten,jenis_hewan,jumlah_hewan,nilai_qurban,tanggal_penyerahan,status,catatan
-Ahmad Sudrajat,ahmad.sudrajat@email.com,081234567890,Jl. Merdeka No. 123 RT 05 RW 02 Gubeng,35,3578,sapi,1,25000000,2025-06-15,verified,Sapi sehat siap kurban
-Siti Aminah,siti.aminah@gmail.com,081234567891,Jl. Diponegoro No. 456 Wonokromo,35,3578,kambing,2,8000000,2025-06-16,submitted,2 kambing etawa premium
-Budi Santoso,budi.santoso@yahoo.com,081234567892,Jl. Ahmad Yani No. 789 Gresik Kota,35,3525,sapi,1,24000000,2025-06-14,verified,Sapi limosin berkualitas
-Fatimah Zahra,fatimah.z@email.com,081234567893,Jl. Raya Waru No. 321 Sidoarjo,35,3515,kambing,3,12000000,2025-06-16,submitted,3 kambing jawa super
-Muhammad Ali,m.ali.bisnis@gmail.com,081234567894,Jl. Veteran No. 654 Malang Kota,35,3573,domba,2,6000000,2025-06-15,verified,Domba garut pilihan
-Khadijah Rahman,khadijah.r@email.com,081234567895,Jl. Pahlawan No. 987 Surabaya Utara,35,3578,sapi,1,26000000,2025-06-17,submitted,Sapi brahman unggul
-Usman Hakim,usman.hakim@email.com,081234567896,Jl. Pemuda No. 147 Gresik,35,3525,kambing,2,7500000,2025-06-14,verified,Kambing pe kualitas baik
-Zahra Putri,zahra.putri@gmail.com,081234567897,Jl. Kartini No. 258 Sidoarjo,35,3515,domba,3,9000000,2025-06-16,submitted,Domba lokal sehat
-Abdullah Maksum,abdullah.m@email.com,081234567898,Jl. Sultan Agung No. 369 Malang,35,3573,sapi,1,25500000,2025-06-15,verified,Sapi simmental berkualitas
-Aminah Sari,aminah.sari@yahoo.com,081234567899,Jl. Basuki Rahmat No. 741 Surabaya,35,3578,kambing,1,4200000,2025-06-17,submitted,Kambing etawa betina
-Joko Widodo,joko.w@email.com,081234567800,Jl. Gajah Mada No. 852 Malang,35,3573,domba,2,6500000,2025-06-16,verified,Domba garut jantan
-Kartini Soemarto,kartini.s@gmail.com,081234567801,Jl. Airlangga No. 963 Surabaya Selatan,35,3578,sapi,1,24500000,2025-06-15,submitted,Sapi bali pilihan
-Wahyu Hidayat,wahyu.h@email.com,081234567802,Jl. Mayjen Sungkono No. 174 Gresik,35,3525,kambing,2,8500000,2025-06-17,verified,Kambing jawa premium
-Nana Supriyati,nana.s@yahoo.com,081234567803,Jl. Jendral Sudirman No. 285 Sidoarjo,35,3515,domba,1,3200000,2025-06-14,submitted,Domba lokal betina
-Tono Sukarno,tono.s@email.com,081234567804,Jl. Ahmad Dahlan No. 396 Malang,35,3573,sapi,1,26500000,2025-06-16,verified,Sapi limosin super 
+Ahmad Subekti,ahmad.subekti@email.com,08123456701,Jl. Raya Gubeng No. 15 Surabaya,35,3578,sapi,1,5500000,2025-06-17,submitted,Qurban sapi untuk keluarga
+Fatimah Zahra,fatimah.zahra@email.com,08123456702,Perumahan Griya Gresik Jl. Mawar No. 22,35,3525,kambing,2,3500000,2025-06-17,submitted,Qurban kambing bersama suami
+Budi Santoso,budi.santoso@email.com,08123456703,Jl. Diponegoro No. 45 Sidoarjo,35,3515,domba,1,2500000,2025-06-17,submitted,Qurban domba untuk anak yatim
+Siti Nurhaliza,siti.nurhaliza@email.com,08123456704,Kampung Malang Kota RT 05 RW 02,35,3573,sapi,1,5500000,2025-06-17,submitted,Qurban sapi atas nama keluarga besar
+Umar bin Khattab,umar.khattab@email.com,08123456705,Jakarta Selatan Kebayoran Baru,31,3171,kambing,1,2000000,2025-06-17,submitted,Qurban kambing untuk tetangga
+Khadijah binti Ahmad,khadijah.ahmad@email.com,08123456706,Jakarta Timur Cakung RT 08 RW 03,31,3172,sapi,2,11000000,2025-06-17,submitted,Qurban sapi bersama keluarga
+Ali bin Abi Thalib,ali.thalib@email.com,08123456707,Jl. Sudirman No. 88 Jakarta Pusat,31,3173,domba,3,7500000,2025-06-17,submitted,Qurban domba untuk masjid
+Hafsah Ummu Mukminin,hafsah.mukminin@email.com,08123456708,Jakarta Barat Grogol Petamburan,31,3174,kambing,1,2200000,2025-06-17,submitted,Qurban kambing sedekah
+Zaid bin Haritsah,zaid.haritsah@email.com,08123456709,Jakarta Utara Kelapa Gading Mall,31,3175,sapi,1,6000000,2025-06-17,submitted,Qurban sapi premium halal
+Aisyah Radhiyallahu Anha,aisyah.radhi@email.com,08123456710,Bogor Kota Jl. Pajajaran No. 99,32,3271,kambing,2,4000000,2025-06-17,submitted,Qurban kambing untuk fakir miskin
+Khalid bin Walid,khalid.walid@email.com,08123456711,Bandung Kota Jl. Asia Afrika,32,3273,domba,1,2800000,2025-06-17,submitted,Qurban domba berkualitas
+Ummu Salamah,ummu.salamah@email.com,08123456712,Depok Kota Margonda Raya,32,3276,sapi,1,5800000,2025-06-17,submitted,Qurban sapi untuk keluarga
+Saad bin Abi Waqqash,saad.waqqash@email.com,08123456713,Bekasi Kota Jl. Ahmad Yani,32,3275,kambing,1,2100000,2025-06-17,submitted,Qurban kambing lokal
+Abdullah bin Umar,abdullah.umar@email.com,08123456714,Semarang Kota Simpang Lima,33,3374,domba,2,5000000,2025-06-17,submitted,Qurban domba gemuk
+Ruqayyah binti Rasulullah,ruqayyah.rasul@email.com,08123456715,Yogyakarta Kota Malioboro Street,34,3471,sapi,1,5700000,2025-06-17,submitted,Qurban sapi kurban berkah 
+Rifyal,test@email.com,081118820202,Lumajang,34,3471,sapi,1,5700000,2025-06-17,submitted,Qurban sapi kurban berkah 
+rachmat,rachmat@email.com,081118820202,jawatimur,34,3471,kambing,1,5700000,2025-06-17,submitted,Qurban sapi kurban berkah 
