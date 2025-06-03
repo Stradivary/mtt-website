@@ -177,6 +177,11 @@ ORDER BY total_penerima DESC;
 -- 8. INSERT SAMPLE REFERENCE DATA
 -- =====================================================
 
+-- Insert sample uploader for testing
+INSERT INTO uploaders (id, email, name, mitra_name, upload_key, is_active) VALUES
+('550e8400-e29b-41d4-a716-446655440000', 'admin@lazis-telkomsel.or.id', 'Admin LAZIS', 'LAZIS_TELKOMSEL', 'baznas2025', true)
+ON CONFLICT (id) DO NOTHING;
+
 -- Insert sample provinces (you can add more)
 INSERT INTO ref_provinsi (kode_provinsi, nama_provinsi, latitude, longitude) VALUES
 ('31', 'DKI Jakarta', -6.208763, 106.845599),
