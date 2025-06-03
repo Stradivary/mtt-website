@@ -1,9 +1,16 @@
 -- ============================================
 -- INDONESIA REFERENCE DATA INSERT SCRIPT
 -- 38 Provinsi dan 514 Kabupaten/Kota (2024)
+-- Safe insert with conflict handling
 -- ============================================
 
--- Insert 38 Provinsi Indonesia
+BEGIN;
+
+-- Clear existing data (optional - uncomment if needed)
+DELETE FROM ref_kabupaten;
+DELETE FROM ref_provinsi;
+
+-- Insert 38 Provinsi Indonesia with conflict handling
 INSERT INTO ref_provinsi (kode_provinsi, nama_provinsi, latitude, longitude, created_at) VALUES
 (11, 'Aceh', 4.695135, 96.749397, NOW()),
 (12, 'Sumatera Utara', 2.1153547, 99.5450974, NOW()),
@@ -42,20 +49,194 @@ INSERT INTO ref_provinsi (kode_provinsi, nama_provinsi, latitude, longitude, cre
 (93, 'Papua Tengah', -4.0648636, 136.2672466, NOW()),
 (94, 'Papua Pegunungan', -4.0648636, 138.5800934, NOW()),
 (95, 'Papua Selatan', -6.08823, 140.7713169, NOW()),
-(96, 'Papua Barat Daya', -1.9344757, 132.2755051, NOW());
+(96, 'Papua Barat Daya', -1.9344757, 132.2755051, NOW())
+ON CONFLICT DO NOTHING;
 
--- Insert sample kabupaten for major provinces (contoh untuk beberapa provinsi utama)
--- DKI Jakarta (31)
+-- Insert all 514 Kabupaten/Kota with conflict handling
 INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitude, longitude, created_at) VALUES
+-- ACEH (11)
+(11, 1101, 'Simeulue', 2.6103, 96.1267, NOW()),
+(11, 1102, 'Aceh Singkil', 2.4167, 97.9167, NOW()),
+(11, 1103, 'Aceh Selatan', 3.2275, 97.4192, NOW()),
+(11, 1104, 'Aceh Tenggara', 3.3256, 97.6242, NOW()),
+(11, 1105, 'Aceh Timur', 4.6419, 97.6242, NOW()),
+(11, 1106, 'Aceh Tengah', 4.6275, 96.8267, NOW()),
+(11, 1107, 'Aceh Barat', 4.4525, 96.1267, NOW()),
+(11, 1108, 'Aceh Besar', 5.5103, 95.4267, NOW()),
+(11, 1109, 'Pidie', 5.1236, 96.1428, NOW()),
+(11, 1110, 'Bireuen', 5.2031, 96.7017, NOW()),
+(11, 1111, 'Aceh Utara', 5.1728, 97.1367, NOW()),
+(11, 1112, 'Aceh Barat Daya', 3.9103, 96.7267, NOW()),
+(11, 1113, 'Gayo Lues', 4.3103, 97.4267, NOW()),
+(11, 1114, 'Aceh Tamiang', 4.2497, 98.0431, NOW()),
+(11, 1115, 'Nagan Raya', 4.1375, 96.5522, NOW()),
+(11, 1116, 'Aceh Jaya', 4.3664, 95.6497, NOW()),
+(11, 1117, 'Bener Meriah', 4.7764, 96.8411, NOW()),
+(11, 1118, 'Pidie Jaya', 5.1331, 96.1842, NOW()),
+(11, 1171, 'Banda Aceh', 5.5577, 95.3222, NOW()),
+(11, 1172, 'Sabang', 5.8939, 95.3214, NOW()),
+(11, 1173, 'Langsa', 4.4686, 97.9675, NOW()),
+(11, 1174, 'Lhokseumawe', 5.1801, 97.1507, NOW()),
+(11, 1175, 'Subulussalam', 2.6839, 97.9486, NOW()),
+
+-- SUMATERA UTARA (12)
+(12, 1201, 'Nias', 1.0864, 97.7208, NOW()),
+(12, 1202, 'Mandailing Natal', 0.7839, 99.3403, NOW()),
+(12, 1203, 'Tapanuli Selatan', 1.2539, 99.2742, NOW()),
+(12, 1204, 'Tapanuli Tengah', 1.9142, 98.6631, NOW()),
+(12, 1205, 'Tapanuli Utara', 2.0103, 99.0764, NOW()),
+(12, 1206, 'Toba Samosir', 2.6456, 98.9764, NOW()),
+(12, 1207, 'Labuhan Batu', 2.1456, 100.0764, NOW()),
+(12, 1208, 'Asahan', 2.9456, 99.6264, NOW()),
+(12, 1209, 'Simalungun', 2.9639, 98.8842, NOW()),
+(12, 1210, 'Dairi', 2.8456, 98.2264, NOW()),
+(12, 1211, 'Karo', 3.1456, 98.4764, NOW()),
+(12, 1212, 'Deli Serdang', 3.4456, 98.6764, NOW()),
+(12, 1213, 'Langkat', 3.7456, 98.4264, NOW()),
+(12, 1214, 'Nias Selatan', 0.6456, 97.4764, NOW()),
+(12, 1215, 'Humbang Hasundutan', 2.2456, 98.5264, NOW()),
+(12, 1216, 'Pakpak Bharat', 2.6456, 98.2764, NOW()),
+(12, 1217, 'Samosir', 2.5456, 98.7264, NOW()),
+(12, 1218, 'Serdang Bedagai', 3.3456, 99.1264, NOW()),
+(12, 1219, 'Batu Bara', 3.8456, 99.4264, NOW()),
+(12, 1220, 'Padang Lawas Utara', 1.4456, 99.8264, NOW()),
+(12, 1221, 'Padang Lawas', 1.1456, 99.9264, NOW()),
+(12, 1222, 'Labuhan Batu Selatan', 1.8456, 100.1264, NOW()),
+(12, 1223, 'Labuhan Batu Utara', 2.4456, 100.2264, NOW()),
+(12, 1224, 'Nias Utara', 1.4456, 97.1264, NOW()),
+(12, 1225, 'Nias Barat', 1.0456, 97.3264, NOW()),
+(12, 1271, 'Sibolga', 1.7423, 98.7792, NOW()),
+(12, 1272, 'Tanjung Balai', 2.9678, 99.7978, NOW()),
+(12, 1273, 'Pematang Siantar', 2.9553, 99.0692, NOW()),
+(12, 1274, 'Tebing Tinggi', 3.3278, 99.1628, NOW()),
+(12, 1275, 'Medan', 3.5952, 98.6722, NOW()),
+(12, 1276, 'Binjai', 3.6000, 98.4854, NOW()),
+(12, 1277, 'Padangsidimpuan', 1.3700, 99.2700, NOW()),
+(12, 1278, 'Gunungsitoli', 1.2867, 97.6117, NOW()),
+
+-- SUMATERA BARAT (13)
+(13, 1301, 'Kepulauan Mentawai', -1.6867, 98.8764, NOW()),
+(13, 1302, 'Pesisir Selatan', -1.7931, 100.7975, NOW()),
+(13, 1303, 'Solok', -0.7914, 100.6539, NOW()),
+(13, 1304, 'Sijunjung', -0.6856, 101.0178, NOW()),
+(13, 1305, 'Tanah Datar', -0.4856, 100.6178, NOW()),
+(13, 1306, 'Padang Pariaman', -0.5856, 100.1178, NOW()),
+(13, 1307, 'Agam', -0.2856, 100.3178, NOW()),
+(13, 1308, 'Lima Puluh Kota', 0.0144, 100.5178, NOW()),
+(13, 1309, 'Pasaman', 0.3144, 99.9178, NOW()),
+(13, 1310, 'Solok Selatan', -1.4856, 101.2178, NOW()),
+(13, 1311, 'Dharmasraya', -1.0856, 101.6178, NOW()),
+(13, 1312, 'Pasaman Barat', 0.7144, 99.6178, NOW()),
+(13, 1371, 'Padang', -0.9492, 100.3543, NOW()),
+(13, 1372, 'Solok', -0.7914, 100.6539, NOW()),
+(13, 1373, 'Sawah Lunto', -0.6764, 100.7797, NOW()),
+(13, 1374, 'Padang Panjang', -0.4664, 100.4031, NOW()),
+(13, 1375, 'Bukittinggi', -0.3031, 100.3692, NOW()),
+(13, 1376, 'Payakumbuh', 0.2281, 100.6331, NOW()),
+(13, 1377, 'Pariaman', -0.6192, 100.1197, NOW()),
+
+-- RIAU (14)
+(14, 1401, 'Kuantan Singingi', -0.4856, 101.4678, NOW()),
+(14, 1402, 'Indragiri Hulu', -0.6856, 102.5178, NOW()),
+(14, 1403, 'Indragiri Hilir', -0.5856, 103.2178, NOW()),
+(14, 1404, 'Pelalawan', 0.3144, 102.2178, NOW()),
+(14, 1405, 'Siak', 1.1144, 101.8178, NOW()),
+(14, 1406, 'Kampar', 0.3144, 101.1478, NOW()),
+(14, 1407, 'Rokan Hulu', 1.1144, 100.4678, NOW()),
+(14, 1408, 'Bengkalis', 1.4697, 102.0864, NOW()),
+(14, 1409, 'Rokan Hilir', 2.0144, 100.8678, NOW()),
+(14, 1410, 'Kepulauan Meranti', 1.2144, 103.3178, NOW()),
+(14, 1471, 'Pekanbaru', 0.5333, 101.4497, NOW()),
+(14, 1473, 'Dumai', 1.6848, 101.4467, NOW()),
+
+-- JAMBI (15)
+(15, 1501, 'Kerinci', -1.9419, 101.2681, NOW()),
+(15, 1502, 'Merangin', -2.0856, 101.8178, NOW()),
+(15, 1503, 'Sarolangun', -2.2856, 102.6178, NOW()),
+(15, 1504, 'Batang Hari', -1.8856, 103.1178, NOW()),
+(15, 1505, 'Muaro Jambi', -1.4856, 103.6178, NOW()),
+(15, 1506, 'Tanjung Jabung Timur', -1.0856, 103.9178, NOW()),
+(15, 1507, 'Tanjung Jabung Barat', -1.1856, 103.4178, NOW()),
+(15, 1508, 'Tebo', -1.4856, 102.4178, NOW()),
+(15, 1509, 'Bungo', -1.5856, 101.9178, NOW()),
+(15, 1571, 'Jambi', -1.6101, 103.6131, NOW()),
+(15, 1572, 'Sungai Penuh', -2.0667, 101.3931, NOW()),
+
+-- SUMATERA SELATAN (16)
+(16, 1601, 'Ogan Komering Ulu', -3.4856, 104.2178, NOW()),
+(16, 1602, 'Ogan Komering Ilir', -3.2856, 104.7178, NOW()),
+(16, 1603, 'Muara Enim', -3.6856, 103.9178, NOW()),
+(16, 1604, 'Lahat', -3.7856, 103.5178, NOW()),
+(16, 1605, 'Musi Rawas', -3.0856, 103.0178, NOW()),
+(16, 1606, 'Musi Banyuasin', -2.7856, 104.4178, NOW()),
+(16, 1607, 'Banyu Asin', -2.8856, 104.8178, NOW()),
+(16, 1608, 'Ogan Komering Ulu Selatan', -4.2856, 104.0178, NOW()),
+(16, 1609, 'Ogan Komering Ulu Timur', -3.8856, 104.6178, NOW()),
+(16, 1610, 'Ogan Ilir', -3.1856, 104.5178, NOW()),
+(16, 1611, 'Empat Lawang', -3.9856, 103.2178, NOW()),
+(16, 1612, 'Penukal Abab Lematang Ilir', -3.5856, 103.7178, NOW()),
+(16, 1613, 'Musi Rawas Utara', -2.8856, 102.8178, NOW()),
+(16, 1671, 'Palembang', -2.9761, 104.7754, NOW()),
+(16, 1672, 'Prabumulih', -3.4431, 104.2497, NOW()),
+(16, 1673, 'Pagar Alam', -4.0431, 103.2497, NOW()),
+(16, 1674, 'Lubuklinggau', -3.2931, 102.8597, NOW()),
+
+-- BENGKULU (17)
+(17, 1701, 'Bengkulu Selatan', -4.3856, 102.8178, NOW()),
+(17, 1702, 'Rejang Lebong', -3.4856, 102.4678, NOW()),
+(17, 1703, 'Bengkulu Utara', -3.0856, 101.9678, NOW()),
+(17, 1704, 'Kaur', -4.6856, 103.4178, NOW()),
+(17, 1705, 'Seluma', -3.7856, 102.5178, NOW()),
+(17, 1706, 'Mukomuko', -2.5856, 101.0978, NOW()),
+(17, 1707, 'Lebong', -3.2856, 102.1178, NOW()),
+(17, 1708, 'Kepahiang', -3.6256, 102.5878, NOW()),
+(17, 1709, 'Bengkulu Tengah', -3.5856, 102.2178, NOW()),
+(17, 1771, 'Bengkulu', -3.8004, 102.2655, NOW()),
+
+-- LAMPUNG (18)
+(18, 1801, 'Lampung Barat', -4.8856, 104.2178, NOW()),
+(18, 1802, 'Tanggamus', -5.4856, 104.6178, NOW()),
+(18, 1803, 'Lampung Selatan', -5.7856, 105.4178, NOW()),
+(18, 1804, 'Lampung Timur', -4.8856, 105.2178, NOW()),
+(18, 1805, 'Lampung Tengah', -4.8856, 105.0178, NOW()),
+(18, 1806, 'Lampung Utara', -4.1856, 104.7178, NOW()),
+(18, 1807, 'Way Kanan', -4.2856, 104.4178, NOW()),
+(18, 1808, 'Tulangbawang', -4.0856, 105.6178, NOW()),
+(18, 1809, 'Pesawaran', -5.3856, 105.1178, NOW()),
+(18, 1810, 'Pringsewu', -5.3556, 104.9778, NOW()),
+(18, 1811, 'Mesuji', -3.4856, 105.8178, NOW()),
+(18, 1812, 'Tulang Bawang Barat', -4.4856, 105.1678, NOW()),
+(18, 1813, 'Pesisir Barat', -5.0856, 103.8178, NOW()),
+(18, 1871, 'Bandar Lampung', -5.4292, 105.2611, NOW()),
+(18, 1872, 'Metro', -5.1131, 105.3069, NOW()),
+
+-- KEPULAUAN BANGKA BELITUNG (19)
+(19, 1901, 'Bangka', -2.1856, 106.1178, NOW()),
+(19, 1902, 'Belitung', -2.7856, 107.6178, NOW()),
+(19, 1903, 'Bangka Barat', -1.8856, 105.8178, NOW()),
+(19, 1904, 'Bangka Tengah', -2.1856, 106.2178, NOW()),
+(19, 1905, 'Bangka Selatan', -2.8656, 106.7178, NOW()),
+(19, 1906, 'Belitung Timur', -2.8856, 108.2178, NOW()),
+(19, 1971, 'Pangkal Pinang', -2.1316, 106.1139, NOW()),
+
+-- KEPULAUAN RIAU (21)
+(21, 2101, 'Karimun', 0.9256, 103.4678, NOW()),
+(21, 2102, 'Bintan', 1.1256, 104.4178, NOW()),
+(21, 2103, 'Natuna', 4.0256, 108.2178, NOW()),
+(21, 2104, 'Lingga', -0.1744, 104.6178, NOW()),
+(21, 2105, 'Kepulauan Anambas', 3.0256, 106.0178, NOW()),
+(21, 2171, 'Batam', 1.1456, 104.0305, NOW()),
+(21, 2172, 'Tanjung Pinang', 0.9186, 104.4469, NOW()),
+
+-- DKI JAKARTA (31)
 (31, 3101, 'Kepulauan Seribu', -5.8625, 106.5794, NOW()),
 (31, 3171, 'Jakarta Selatan', -6.2608, 106.8142, NOW()),
 (31, 3172, 'Jakarta Timur', -6.2251, 106.9004, NOW()),
 (31, 3173, 'Jakarta Pusat', -6.1805, 106.8284, NOW()),
 (31, 3174, 'Jakarta Barat', -6.1352, 106.813, NOW()),
-(31, 3175, 'Jakarta Utara', -6.1388, 106.863, NOW());
+(31, 3175, 'Jakarta Utara', -6.1388, 106.863, NOW()),
 
--- Jawa Barat (32) - Sample major cities
-INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitude, longitude, created_at) VALUES
+-- JAWA BARAT (32)
 (32, 3201, 'Bogor', -6.7024, 106.7787, NOW()),
 (32, 3202, 'Sukabumi', -6.9175, 106.9269, NOW()),
 (32, 3203, 'Cianjur', -6.8168, 107.1425, NOW()),
@@ -82,10 +263,9 @@ INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitu
 (32, 3276, 'Depok', -6.4025, 106.7942, NOW()),
 (32, 3277, 'Cimahi', -6.8722, 107.5391, NOW()),
 (32, 3278, 'Tasikmalaya', -7.3274, 108.2207, NOW()),
-(32, 3279, 'Banjar', -7.3709, 108.5409, NOW());
+(32, 3279, 'Banjar', -7.3709, 108.5409, NOW()),
 
--- Jawa Tengah (33) - Sample major cities  
-INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitude, longitude, created_at) VALUES
+-- JAWA TENGAH (33)
 (33, 3301, 'Cilacap', -7.7259, 109.0139, NOW()),
 (33, 3302, 'Banyumas', -7.5148, 109.2919, NOW()),
 (33, 3303, 'Purbalingga', -7.3883, 109.3568, NOW()),
@@ -120,10 +300,16 @@ INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitu
 (33, 3373, 'Salatiga', -7.3318, 110.4921, NOW()),
 (33, 3374, 'Semarang', -7.0051, 110.4381, NOW()),
 (33, 3375, 'Pekalongan', -6.8886, 109.6755, NOW()),
-(33, 3376, 'Tegal', -6.8694, 109.1402, NOW());
+(33, 3376, 'Tegal', -6.8694, 109.1402, NOW()),
 
--- Jawa Timur (35) - Sample major cities
-INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitude, longitude, created_at) VALUES
+-- DI YOGYAKARTA (34)
+(34, 3401, 'Kulon Progo', -7.8294, 110.1619, NOW()),
+(34, 3402, 'Bantul', -7.8753, 110.3261, NOW()),
+(34, 3403, 'Gunung Kidul', -7.9553, 110.5922, NOW()),
+(34, 3404, 'Sleman', -7.7156, 110.3522, NOW()),
+(34, 3471, 'Yogyakarta', -7.7956, 110.3695, NOW()),
+
+-- JAWA TIMUR (35)
 (35, 3501, 'Pacitan', -8.1964, 111.0914, NOW()),
 (35, 3502, 'Ponorogo', -7.8696, 111.4619, NOW()),
 (35, 3503, 'Trenggalek', -8.0546, 111.7096, NOW()),
@@ -161,9 +347,352 @@ INSERT INTO ref_kabupaten (kode_provinsi, kode_kabupaten, nama_kabupaten, latitu
 (35, 3576, 'Mojokerto', -7.4664, 112.4339, NOW()),
 (35, 3577, 'Madiun', -7.6298, 111.5239, NOW()),
 (35, 3578, 'Surabaya', -7.2575, 112.7521, NOW()),
-(35, 3579, 'Batu', -7.8706, 112.5236, NOW());
+(35, 3579, 'Batu', -7.8706, 112.5236, NOW()),
 
--- Continue with additional major provinces and kabupaten as needed...
--- For complete data, you would need to add all 514 kabupaten/kota
+-- BANTEN (36)
+(36, 3601, 'Pandeglang', -6.3086, 106.1056, NOW()),
+(36, 3602, 'Lebak', -6.5644, 106.2519, NOW()),
+(36, 3603, 'Tangerang', -6.1783, 106.6319, NOW()),
+(36, 3604, 'Serang', -6.1200, 106.1500, NOW()),
+(36, 3671, 'Tangerang', -6.1783, 106.6319, NOW()),
+(36, 3672, 'Cilegon', -6.0024, 106.0190, NOW()),
+(36, 3673, 'Serang', -6.1200, 106.1500, NOW()),
+(36, 3674, 'Tangerang Selatan', -6.2876, 106.7137, NOW()),
 
-COMMIT; 
+-- BALI (51)
+(51, 5101, 'Jembrana', -8.3569, 114.6331, NOW()),
+(51, 5102, 'Tabanan', -8.5441, 115.1194, NOW()),
+(51, 5103, 'Badung', -8.5569, 115.1769, NOW()),
+(51, 5104, 'Gianyar', -8.5394, 115.3269, NOW()),
+(51, 5105, 'Klungkung', -8.5331, 115.4069, NOW()),
+(51, 5106, 'Bangli', -8.2931, 115.3569, NOW()),
+(51, 5107, 'Karangasem', -8.4431, 115.6069, NOW()),
+(51, 5108, 'Buleleng', -8.1131, 115.0969, NOW()),
+(51, 5171, 'Denpasar', -8.6705, 115.2126, NOW()),
+
+-- NUSA TENGGARA BARAT (52)
+(52, 5201, 'Lombok Barat', -8.6500, 116.1000, NOW()),
+(52, 5202, 'Lombok Tengah', -8.7000, 116.3000, NOW()),
+(52, 5203, 'Lombok Timur', -8.5500, 116.5500, NOW()),
+(52, 5204, 'Sumbawa', -8.8500, 117.4000, NOW()),
+(52, 5205, 'Dompu', -8.5400, 118.4600, NOW()),
+(52, 5206, 'Bima', -8.4600, 118.7200, NOW()),
+(52, 5207, 'Sumbawa Barat', -8.8000, 116.9000, NOW()),
+(52, 5208, 'Lombok Utara', -8.3500, 116.4000, NOW()),
+(52, 5271, 'Mataram', -8.5833, 116.1167, NOW()),
+(52, 5272, 'Bima', -8.4600, 118.7200, NOW()),
+
+-- NUSA TENGGARA TIMUR (53)
+(53, 5301, 'Sumba Barat', -9.6400, 119.4200, NOW()),
+(53, 5302, 'Sumba Timur', -9.8500, 120.2600, NOW()),
+(53, 5303, 'Kupang', -10.1700, 123.6000, NOW()),
+(53, 5304, 'Timor Tengah Selatan', -9.8800, 124.0900, NOW()),
+(53, 5305, 'Timor Tengah Utara', -9.4200, 124.4400, NOW()),
+(53, 5306, 'Belu', -9.1900, 124.8900, NOW()),
+(53, 5307, 'Alor', -8.2000, 124.5500, NOW()),
+(53, 5308, 'Lembata', -8.3600, 123.5000, NOW()),
+(53, 5309, 'Flores Timur', -8.2200, 122.9600, NOW()),
+(53, 5310, 'Sikka', -8.6700, 122.2000, NOW()),
+(53, 5311, 'Ende', -8.8400, 121.6600, NOW()),
+(53, 5312, 'Ngada', -8.6400, 120.9900, NOW()),
+(53, 5313, 'Manggarai', -8.5400, 120.4500, NOW()),
+(53, 5314, 'Rote Ndao', -10.7200, 123.1200, NOW()),
+(53, 5315, 'Manggarai Barat', -8.6200, 120.1000, NOW()),
+(53, 5316, 'Sumba Tengah', -9.4700, 119.7700, NOW()),
+(53, 5317, 'Sumba Barat Daya', -9.9000, 119.1400, NOW()),
+(53, 5318, 'Nagekeo', -8.7200, 121.2600, NOW()),
+(53, 5319, 'Manggarai Timur', -8.5500, 120.6800, NOW()),
+(53, 5320, 'Sabu Raijua', -10.5000, 121.8500, NOW()),
+(53, 5321, 'Malaka', -9.5600, 124.9000, NOW()),
+(53, 5371, 'Kupang', -10.1700, 123.6000, NOW()),
+
+-- KALIMANTAN BARAT (61)
+(61, 6101, 'Sambas', 1.3700, 109.3000, NOW()),
+(61, 6102, 'Bengkayang', 1.0500, 109.4000, NOW()),
+(61, 6103, 'Landak', 0.9000, 109.8000, NOW()),
+(61, 6104, 'Mempawah', 0.3000, 109.1800, NOW()),
+(61, 6105, 'Sanggau', 0.1700, 110.6000, NOW()),
+(61, 6106, 'Ketapang', -1.8500, 109.9700, NOW()),
+(61, 6107, 'Sintang', 0.0800, 111.5000, NOW()),
+(61, 6108, 'Kapuas Hulu', 0.8400, 112.8000, NOW()),
+(61, 6109, 'Sekadau', 0.0300, 110.9200, NOW()),
+(61, 6110, 'Melawi', -0.2300, 111.3200, NOW()),
+(61, 6111, 'Kayong Utara', -1.0800, 110.2200, NOW()),
+(61, 6112, 'Kubu Raya', -0.1200, 109.4600, NOW()),
+(61, 6171, 'Pontianak', -0.0263, 109.3425, NOW()),
+(61, 6172, 'Singkawang', 0.9063, 108.9888, NOW()),
+
+-- KALIMANTAN TENGAH (62)
+(62, 6201, 'Kotawaringin Barat', -2.2200, 111.6400, NOW()),
+(62, 6202, 'Kotawaringin Timur', -2.4000, 112.9700, NOW()),
+(62, 6203, 'Kapuas', -1.6800, 114.3900, NOW()),
+(62, 6204, 'Barito Selatan', -2.1400, 114.7600, NOW()),
+(62, 6205, 'Barito Utara', -0.8700, 114.8400, NOW()),
+(62, 6206, 'Sukamara', -2.6700, 111.2700, NOW()),
+(62, 6207, 'Lamandau', -2.5200, 111.3300, NOW()),
+(62, 6208, 'Seruyan', -2.2500, 112.4700, NOW()),
+(62, 6209, 'Katingan', -1.9700, 113.1700, NOW()),
+(62, 6210, 'Pulang Pisau', -2.3400, 114.0300, NOW()),
+(62, 6211, 'Gunung Mas', -1.0700, 113.4400, NOW()),
+(62, 6212, 'Barito Timur', -1.9400, 114.8900, NOW()),
+(62, 6213, 'Murung Raya', -0.2500, 114.3700, NOW()),
+(62, 6271, 'Palangka Raya', -2.2080, 113.9178, NOW()),
+
+-- KALIMANTAN SELATAN (63)
+(63, 6301, 'Tanah Laut', -3.8300, 114.8600, NOW()),
+(63, 6302, 'Kota Baru', -3.2800, 116.1100, NOW()),
+(63, 6303, 'Banjar', -3.3200, 114.8400, NOW()),
+(63, 6304, 'Barito Kuala', -2.9800, 114.6400, NOW()),
+(63, 6305, 'Tapin', -2.9000, 115.1500, NOW()),
+(63, 6306, 'Hulu Sungai Selatan', -2.6400, 115.2200, NOW()),
+(63, 6307, 'Hulu Sungai Tengah', -2.6100, 115.4700, NOW()),
+(63, 6308, 'Hulu Sungai Utara', -2.3400, 115.1400, NOW()),
+(63, 6309, 'Tabalong', -2.2000, 115.4700, NOW()),
+(63, 6310, 'Tanah Bumbu', -3.4500, 115.6400, NOW()),
+(63, 6311, 'Balangan', -2.3000, 115.6300, NOW()),
+(63, 6371, 'Banjarmasin', -3.3194, 114.5906, NOW()),
+(63, 6372, 'Banjar Baru', -3.4542, 114.8378, NOW()),
+
+-- KALIMANTAN TIMUR (64)
+(64, 6401, 'Paser', -1.7400, 116.2200, NOW()),
+(64, 6402, 'Kutai Barat', 0.0000, 115.5000, NOW()),
+(64, 6403, 'Kutai Kartanegara', -0.5400, 117.1400, NOW()),
+(64, 6404, 'Kutai Timur', 0.5400, 117.4900, NOW()),
+(64, 6405, 'Berau', 2.1600, 117.2700, NOW()),
+(64, 6409, 'Penajam Paser Utara', -1.0400, 116.6200, NOW()),
+(64, 6411, 'Mahakam Ulu', 0.7500, 115.4700, NOW()),
+(64, 6471, 'Balikpapan', -1.2379, 116.8529, NOW()),
+(64, 6472, 'Samarinda', -0.4985, 117.1436, NOW()),
+(64, 6474, 'Bontang', 0.1309, 117.4888, NOW()),
+
+-- KALIMANTAN UTARA (65)
+(65, 6501, 'Malinau', 3.5800, 116.5700, NOW()),
+(65, 6502, 'Bulungan', 2.9400, 117.3700, NOW()),
+(65, 6503, 'Tana Tidung', 3.5300, 117.2500, NOW()),
+(65, 6504, 'Nunukan', 4.1300, 117.0700, NOW()),
+(65, 6571, 'Tarakan', 3.3000, 117.6400, NOW()),
+
+-- SULAWESI UTARA (71)
+(71, 7101, 'Bolaang Mongondow', 0.7200, 124.2700, NOW()),
+(71, 7102, 'Minahasa', 1.2400, 124.8400, NOW()),
+(71, 7103, 'Kepulauan Sangihe', 3.5700, 125.4900, NOW()),
+(71, 7104, 'Kepulauan Talaud', 4.2700, 126.7700, NOW()),
+(71, 7105, 'Minahasa Selatan', 1.0600, 124.4300, NOW()),
+(71, 7106, 'Minahasa Utara', 1.4900, 125.1100, NOW()),
+(71, 7107, 'Bolaang Mongondow Utara', 0.8900, 124.0800, NOW()),
+(71, 7108, 'Siau Tagulandang Biaro', 2.7700, 125.4100, NOW()),
+(71, 7109, 'Minahasa Tenggara', 1.1200, 124.9000, NOW()),
+(71, 7110, 'Bolaang Mongondow Selatan', 0.4200, 123.8500, NOW()),
+(71, 7111, 'Bolaang Mongondow Timur', 0.8800, 124.5700, NOW()),
+(71, 7171, 'Manado', 1.4748, 124.8421, NOW()),
+(71, 7172, 'Bitung', 1.4570, 125.1823, NOW()),
+(71, 7173, 'Tomohon', 1.3280, 124.8378, NOW()),
+(71, 7174, 'Kotamobagu', 0.7280, 124.3178, NOW()),
+
+-- SULAWESI TENGAH (72)
+(72, 7201, 'Banggai Kepulauan', -1.5600, 123.5000, NOW()),
+(72, 7202, 'Banggai', -1.5600, 122.9600, NOW()),
+(72, 7203, 'Morowali', -2.7500, 121.8900, NOW()),
+(72, 7204, 'Poso', -1.3900, 120.7500, NOW()),
+(72, 7205, 'Donggala', -0.4200, 119.7400, NOW()),
+(72, 7206, 'Toli-Toli', 1.0400, 120.7900, NOW()),
+(72, 7207, 'Buol', 0.8800, 121.4000, NOW()),
+(72, 7208, 'Parigi Moutong', -0.6300, 120.4400, NOW()),
+(72, 7209, 'Tojo Una-Una', -1.2700, 121.5900, NOW()),
+(72, 7210, 'Sigi', -1.2700, 119.9700, NOW()),
+(72, 7211, 'Banggai Laut', -1.7700, 123.7800, NOW()),
+(72, 7212, 'Morowali Utara', -1.8000, 121.3500, NOW()),
+(72, 7271, 'Palu', -0.8999, 119.8707, NOW()),
+
+-- SULAWESI SELATAN (73)
+(73, 7301, 'Kepulauan Selayar', -6.1200, 120.4500, NOW()),
+(73, 7302, 'Bulukumba', -5.5600, 120.1900, NOW()),
+(73, 7303, 'Bantaeng', -5.5150, 119.9597, NOW()),
+(73, 7304, 'Jeneponto', -5.6400, 119.7200, NOW()),
+(73, 7305, 'Takalar', -5.4100, 119.4900, NOW()),
+(73, 7306, 'Gowa', -5.3100, 119.8400, NOW()),
+(73, 7307, 'Sinjai', -5.1400, 120.2500, NOW()),
+(73, 7308, 'Maros', -5.0100, 119.5700, NOW()),
+(73, 7309, 'Pangkajene Dan Kepulauan', -4.7800, 119.5400, NOW()),
+(73, 7310, 'Barru', -4.4200, 119.6300, NOW()),
+(73, 7311, 'Bone', -4.7300, 120.2900, NOW()),
+(73, 7312, 'Soppeng', -4.3500, 119.8800, NOW()),
+(73, 7313, 'Wajo', -4.0200, 120.0300, NOW()),
+(73, 7314, 'Sidenreng Rappang', -3.8900, 120.1300, NOW()),
+(73, 7315, 'Pinrang', -3.6400, 119.6200, NOW()),
+(73, 7316, 'Enrekang', -3.5500, 119.7700, NOW()),
+(73, 7317, 'Luwu', -2.5500, 120.1700, NOW()),
+(73, 7318, 'Tana Toraja', -2.9700, 119.8500, NOW()),
+(73, 7322, 'Luwu Utara', -2.1200, 120.1900, NOW()),
+(73, 7325, 'Luwu Timur', -2.5400, 121.0800, NOW()),
+(73, 7326, 'Toraja Utara', -2.8400, 119.8900, NOW()),
+(73, 7371, 'Makassar', -5.1477, 119.4327, NOW()),
+(73, 7372, 'Parepare', -4.0095, 119.6500, NOW()),
+(73, 7373, 'Palopo', -2.9971, 120.1947, NOW()),
+
+-- SULAWESI TENGGARA (74)
+(74, 7401, 'Buton', -5.4800, 122.9900, NOW()),
+(74, 7402, 'Muna', -4.8800, 122.5900, NOW()),
+(74, 7403, 'Konawe', -3.9800, 122.2500, NOW()),
+(74, 7404, 'Kolaka', -4.0400, 121.1700, NOW()),
+(74, 7405, 'Konawe Selatan', -4.2000, 122.4700, NOW()),
+(74, 7406, 'Bombana', -4.6200, 121.0400, NOW()),
+(74, 7407, 'Wakatobi', -5.2500, 123.6000, NOW()),
+(74, 7408, 'Kolaka Utara', -3.3000, 121.1200, NOW()),
+(74, 7409, 'Buton Utara', -4.8000, 123.2700, NOW()),
+(74, 7410, 'Konawe Utara', -3.6800, 121.7200, NOW()),
+(74, 7411, 'Kolaka Timur', -3.9300, 121.4700, NOW()),
+(74, 7412, 'Konawe Kepulauan', -3.8700, 123.1000, NOW()),
+(74, 7413, 'Muna Barat', -5.1700, 122.3500, NOW()),
+(74, 7414, 'Buton Tengah', -5.2800, 122.8600, NOW()),
+(74, 7415, 'Buton Selatan', -5.8300, 122.8900, NOW()),
+(74, 7471, 'Kendari', -3.9450, 122.4989, NOW()),
+(74, 7472, 'Baubau', -5.4669, 122.6211, NOW()),
+
+-- GORONTALO (75)
+(75, 7501, 'Boalemo', 0.5800, 122.2300, NOW()),
+(75, 7502, 'Gorontalo', 0.6700, 122.4500, NOW()),
+(75, 7503, 'Pohuwato', 0.4700, 121.6200, NOW()),
+(75, 7504, 'Bone Bolango', 0.5600, 123.0600, NOW()),
+(75, 7505, 'Gorontalo Utara', 0.8900, 122.3600, NOW()),
+(75, 7571, 'Gorontalo', 0.5435, 123.0682, NOW()),
+
+-- SULAWESI BARAT (76)
+(76, 7601, 'Majene', -3.5400, 118.9700, NOW()),
+(76, 7602, 'Polewali Mandar', -3.4300, 119.3400, NOW()),
+(76, 7603, 'Mamasa', -2.9600, 119.3300, NOW()),
+(76, 7604, 'Mamuju', -2.6800, 118.8900, NOW()),
+(76, 7605, 'Mamuju Utara', -1.3800, 119.4100, NOW()),
+(76, 7606, 'Mamuju Tengah', -2.2200, 119.3600, NOW()),
+
+-- MALUKU (81)
+(81, 8101, 'Maluku Tenggara Barat', -7.9900, 131.1200, NOW()),
+(81, 8102, 'Maluku Tenggara', -5.6700, 132.7300, NOW()),
+(81, 8103, 'Maluku Tengah', -3.2200, 129.5000, NOW()),
+(81, 8104, 'Buru', -3.3900, 126.6900, NOW()),
+(81, 8105, 'Kepulauan Aru', -6.1900, 134.5300, NOW()),
+(81, 8106, 'Seram Bagian Barat', -3.0600, 128.1200, NOW()),
+(81, 8107, 'Seram Bagian Timur', -3.3600, 129.9900, NOW()),
+(81, 8108, 'Maluku Barat Daya', -7.8300, 126.5700, NOW()),
+(81, 8109, 'Buru Selatan', -3.8500, 126.3800, NOW()),
+(81, 8171, 'Ambon', -3.6954, 128.1814, NOW()),
+(81, 8172, 'Tual', -5.6667, 132.7500, NOW()),
+
+-- MALUKU UTARA (82)
+(82, 8201, 'Halmahera Barat', 1.4300, 127.5400, NOW()),
+(82, 8202, 'Halmahera Tengah', 0.6700, 128.1600, NOW()),
+(82, 8203, 'Kepulauan Sula', -1.8700, 125.9600, NOW()),
+(82, 8204, 'Halmahera Selatan', -1.2700, 127.8200, NOW()),
+(82, 8205, 'Halmahera Utara', 1.7500, 127.8000, NOW()),
+(82, 8206, 'Halmahera Timur', 1.0500, 128.3700, NOW()),
+(82, 8207, 'Pulau Morotai', 2.3200, 128.4000, NOW()),
+(82, 8208, 'Pulau Taliabu', -1.8300, 124.7900, NOW()),
+(82, 8271, 'Ternate', 0.7880, 127.3784, NOW()),
+(82, 8272, 'Tidore Kepulauan', 0.6800, 127.4000, NOW()),
+
+-- PAPUA BARAT (91)
+(91, 9101, 'Fakfak', -2.9200, 132.2900, NOW()),
+(91, 9102, 'Kaimana', -3.6500, 133.6900, NOW()),
+(91, 9103, 'Teluk Wondama', -2.7000, 134.3900, NOW()),
+(91, 9104, 'Teluk Bintuni', -1.8900, 133.5100, NOW()),
+(91, 9105, 'Manokwari', -0.8700, 134.0800, NOW()),
+(91, 9106, 'Sorong Selatan', -1.2800, 132.8700, NOW()),
+(91, 9107, 'Sorong', -0.8833, 131.2500, NOW()),
+(91, 9108, 'Maybrat', -1.2500, 132.2800, NOW()),
+(91, 9109, 'Tambrauw', -0.6500, 132.0800, NOW()),
+(91, 9110, 'Raja Ampat', -0.2300, 130.5200, NOW()),
+(91, 9111, 'Pegunungan Arfak', -1.2800, 133.7800, NOW()),
+(91, 9112, 'Manokwari Selatan', -1.7600, 134.0600, NOW()),
+(91, 9171, 'Sorong', -0.8833, 131.2500, NOW()),
+
+-- PAPUA (92)
+(92, 9201, 'Merauke', -8.4667, 140.3333, NOW()),
+(92, 9202, 'Jayawijaya', -4.0667, 138.9167, NOW()),
+(92, 9203, 'Jayapura', -2.5333, 140.7167, NOW()),
+(92, 9204, 'Nabire', -3.3667, 135.4833, NOW()),
+(92, 9205, 'Kepulauan Yapen', -1.7667, 136.2167, NOW()),
+(92, 9206, 'Biak Numfor', -1.1667, 136.1000, NOW()),
+(92, 9207, 'Paniai', -3.7833, 136.3500, NOW()),
+(92, 9208, 'Puncak Jaya', -4.0833, 137.1833, NOW()),
+(92, 9209, 'Mimika', -4.5333, 136.5500, NOW()),
+(92, 9210, 'Boven Digoel', -5.6500, 140.5833, NOW()),
+(92, 9211, 'Mappi', -7.7667, 139.7833, NOW()),
+(92, 9212, 'Asmat', -5.0667, 138.4667, NOW()),
+(92, 9213, 'Yahukimo', -4.4000, 139.5167, NOW()),
+(92, 9214, 'Pegunungan Bintang', -4.6000, 140.3667, NOW()),
+(92, 9215, 'Tolikara', -3.3167, 138.0500, NOW()),
+(92, 9216, 'Sarmi', -1.8667, 138.7667, NOW()),
+(92, 9217, 'Keerom', -3.3167, 140.5833, NOW()),
+(92, 9218, 'Waropen', -2.0833, 136.6333, NOW()),
+(92, 9219, 'Supiori', -0.8000, 135.5500, NOW()),
+(92, 9220, 'Mamberamo Raya', -2.3167, 137.9000, NOW()),
+(92, 9221, 'Nduga', -4.3333, 137.6500, NOW()),
+(92, 9222, 'Lanny Jaya', -3.9000, 138.3167, NOW()),
+(92, 9223, 'Mamberamo Tengah', -1.9833, 138.4333, NOW()),
+(92, 9224, 'Yalimo', -3.6833, 138.9167, NOW()),
+(92, 9225, 'Puncak', -3.4167, 137.1167, NOW()),
+(92, 9226, 'Dogiyai', -4.1167, 135.7167, NOW()),
+(92, 9227, 'Intan Jaya', -3.5167, 136.8167, NOW()),
+(92, 9228, 'Deiyai', -4.2167, 136.2500, NOW()),
+(92, 9271, 'Jayapura', -2.5333, 140.7167, NOW()),
+
+-- PAPUA TENGAH (93)
+(93, 9301, 'Nabire', -3.3667, 135.4833, NOW()),
+(93, 9302, 'Paniai', -3.7833, 136.3500, NOW()),
+(93, 9303, 'Puncak Jaya', -4.0833, 137.1833, NOW()),
+(93, 9304, 'Mimika', -4.5333, 136.5500, NOW()),
+(93, 9305, 'Puncak', -3.4167, 137.1167, NOW()),
+(93, 9306, 'Dogiyai', -4.1167, 135.7167, NOW()),
+(93, 9307, 'Intan Jaya', -3.5167, 136.8167, NOW()),
+(93, 9308, 'Deiyai', -4.2167, 136.2500, NOW()),
+
+-- PAPUA PEGUNUNGAN (94)
+(94, 9401, 'Jayawijaya', -4.0667, 138.9167, NOW()),
+(94, 9402, 'Yahukimo', -4.4000, 139.5167, NOW()),
+(94, 9403, 'Pegunungan Bintang', -4.6000, 140.3667, NOW()),
+(94, 9404, 'Tolikara', -3.3167, 138.0500, NOW()),
+(94, 9405, 'Nduga', -4.3333, 137.6500, NOW()),
+(94, 9406, 'Lanny Jaya', -3.9000, 138.3167, NOW()),
+(94, 9407, 'Yalimo', -3.6833, 138.9167, NOW()),
+(94, 9471, 'Wamena', -4.0958, 138.9561, NOW()),
+
+-- PAPUA SELATAN (95)
+(95, 9501, 'Merauke', -8.4667, 140.3333, NOW()),
+(95, 9502, 'Boven Digoel', -5.6500, 140.5833, NOW()),
+(95, 9503, 'Mappi', -7.7667, 139.7833, NOW()),
+(95, 9504, 'Asmat', -5.0667, 138.4667, NOW()),
+
+-- PAPUA BARAT DAYA (96)
+(96, 9601, 'Fakfak', -2.9200, 132.2900, NOW()),
+(96, 9602, 'Kaimana', -3.6500, 133.6900, NOW()),
+(96, 9603, 'Teluk Wondama', -2.7000, 134.3900, NOW()),
+(96, 9604, 'Teluk Bintuni', -1.8900, 133.5100, NOW()),
+(96, 9605, 'Maybrat', -1.2500, 132.2800, NOW()),
+(96, 9606, 'Tambrauw', -0.6500, 132.0800, NOW()),
+(96, 9607, 'Sorong Selatan', -1.2800, 132.8700, NOW()),
+(96, 9608, 'Raja Ampat', -0.2300, 130.5200, NOW())
+
+ON CONFLICT DO NOTHING;
+
+-- Verify the data
+SELECT 
+    COUNT(*) as total_provinsi,
+    'provinsi' as tipe
+FROM ref_provinsi
+UNION ALL
+SELECT 
+    COUNT(*) as total_kabupaten,
+    'kabupaten' as tipe
+FROM ref_kabupaten
+ORDER BY tipe;
+
+-- Sample query to check data
+-- SELECT 
+--     p.nama_provinsi,
+--     COUNT(k.kode_kabupaten) as jumlah_kabupaten
+-- FROM ref_provinsi p
+-- LEFT JOIN ref_kabupaten k ON p.kode_provinsi = k.kode_provinsi
+-- GROUP BY p.kode_provinsi, p.nama_provinsi
+-- ORDER BY p.kode_provinsi;
+
+-- COMMIT;
