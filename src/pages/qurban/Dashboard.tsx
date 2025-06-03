@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Clock, RefreshCw, Filter, Download } from 'lucide-react';
-import SimplifiedStatsCards from '../../components/qurban/SimplifiedStatsCards';
-import WorkingIndonesiaMap from '../../components/qurban/WorkingIndonesiaMap';
-import AggregatedDistributionTable from '../../components/qurban/AggregatedDistributionTable';
-import SimpleActivityFeed from '../../components/qurban/SimpleActivityFeed';
+import StatsCards from '../../components/qurban/StatsCards';
+import IndonesiaMap from '../../components/qurban/IndonesiaMap';
+import DistributionTable from '../../components/qurban/DistributionTable';
+import ActivityFeed from '../../components/qurban/ActivityFeed';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
 const Dashboard = () => {
@@ -168,18 +168,18 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 1. Simplified Statistics Cards */}
+        {/* 1. Statistics Cards */}
         <div className="mb-8">
-          <SimplifiedStatsCards 
+          <StatsCards 
             stats={stats} 
             loading={loading}
             animalBreakdown={animalBreakdown}
           />
         </div>
 
-        {/* 2. Working Map */}
+        {/* 2. Indonesia Map */}
         <div className="mb-8">
-          <WorkingIndonesiaMap 
+          <IndonesiaMap 
             data={chartData.provinsiBreakdown}
             totalPenerima={stats?.total_penerima || 0}
             kabupatenCoverage={stats?.kabupaten_coverage || 0}
@@ -188,9 +188,9 @@ const Dashboard = () => {
 
         {/* 3. Two Column Layout: Activities + Quick Stats */}
         <div className="grid lg:grid-cols-3 gap-8 mb-8">
-          {/* Simple Activity Feed */}
+          {/* Activity Feed */}
           <div className="lg:col-span-2">
-            <SimpleActivityFeed 
+            <ActivityFeed 
               activities={recentActivities} 
               loading={loading}
             />
@@ -249,9 +249,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 4. Aggregated Distribution Table */}
+        {/* 4. Distribution Table */}
         <div className="mb-8">
-          <AggregatedDistributionTable refreshTrigger={refreshTrigger} />
+          <DistributionTable refreshTrigger={refreshTrigger} />
         </div>
       </div>
     </div>

@@ -11,11 +11,11 @@ interface KabupatenSummary {
   latest_distribution: string;
 }
 
-interface AggregatedDistributionTableProps {
+interface DistributionTableProps {
   refreshTrigger?: number;
 }
 
-const AggregatedDistributionTable: React.FC<AggregatedDistributionTableProps> = ({
+const DistributionTable: React.FC<DistributionTableProps> = ({
   refreshTrigger = 0
 }) => {
   const [data, setData] = useState<KabupatenSummary[]>([]);
@@ -168,7 +168,7 @@ const AggregatedDistributionTable: React.FC<AggregatedDistributionTableProps> = 
         <div>
           <h2 className="text-xl font-bold text-gray-900 flex items-center">
             <MapPin className="w-5 h-5 mr-2 text-green-500" />
-            Agregasi Distribusi per Kabupaten
+            Distribusi per Kabupaten
           </h2>
           <p className="text-sm text-gray-600">
             Summary distribusi qurban berdasarkan wilayah kabupaten/kota
@@ -335,4 +335,4 @@ const AggregatedDistributionTable: React.FC<AggregatedDistributionTableProps> = 
   );
 };
 
-export default AggregatedDistributionTable; 
+export default DistributionTable; 

@@ -8,12 +8,12 @@ interface Activity {
   timestamp: string;
 }
 
-interface SimpleActivityFeedProps {
+interface ActivityFeedProps {
   activities: Activity[];
   loading?: boolean;
 }
 
-const SimpleActivityFeed: React.FC<SimpleActivityFeedProps> = ({ activities, loading = false }) => {
+const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, loading = false }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -88,4 +88,4 @@ const SimpleActivityFeed: React.FC<SimpleActivityFeedProps> = ({ activities, loa
   );
 };
 
-export default SimpleActivityFeed; 
+export default ActivityFeed; 

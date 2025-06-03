@@ -1,72 +1,96 @@
 import React from 'react';
-import { Users, MapPin, Heart, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, TrendingUp, MapPin, Target } from 'lucide-react';
 import { DashboardStats } from '../../types/qurban';
 
 interface StatsCardsProps {
   stats: DashboardStats | null;
   loading: boolean;
+  animalBreakdown?: Record<string, number>;
 }
 
-const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
+// Format currency to Indonesian format (juta, milyar)
+const formatCurrency = (value: number): string => {
+  if (value >= 1000000000) {
+    return `Rp ${(value / 1000000000).toFixed(1).replace('.', ',')} milyar`;
+  } else if (value >= 1000000) {
+    return `Rp ${(value / 1000000).toFixed(1).replace('.', ',')} juta`;
+  } else {
+    return `Rp ${value.toLocaleString('id-ID')}`;
+  }
+};
+
+// Get animal icon
+const getAnimalIcon = (jenis: string): string => {
+  switch (jenis.toLowerCase()) {
+    case 'sapi':
+      return '🐄';
+    case 'kambing':
+      return '🐐';
+    case 'domba':
+      return '🐑';
+    default:
+      return '🐄';
+  }
+};
+
+const StatsCards: React.FC<StatsCardsProps> = ({ 
+  stats, 
+  loading, 
+  animalBreakdown = {} 
+}) => {
   const cards = [
     {
       title: 'Total Muzakki',
-      value: stats?.total_muzakki || 0,
+      value: stats?.total_muzakki?.toLocaleString('id-ID') || '0',
+      subtitle: 'Donatur',
       icon: Users,
       color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      format: (val: number) => val.toLocaleString('id-ID')
+      textColor: 'text-blue-600',
+      bgColor: 'bg-blue-50'
     },
     {
-      title: 'Total Hewan Qurban',
-      value: stats?.total_hewan || 0,
-      icon: Heart,
+      title: 'Total Penerima',
+      value: stats?.total_penerima?.toLocaleString('id-ID') || '0',
+      subtitle: 'Keluarga',
+      icon: Target,
       color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600',
-      format: (val: number) => val.toLocaleString('id-ID')
-    },
-    {
-      title: 'Keluarga Penerima',
-      value: stats?.total_penerima || 0,
-      icon: Users,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600',
-      format: (val: number) => val.toLocaleString('id-ID')
-    },
-    {
-      title: 'Kabupaten Terjangkau',
-      value: stats?.kabupaten_coverage || 0,
-      icon: MapPin,
-      color: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50',
-      iconColor: 'text-orange-600',
-      format: (val: number) => val.toString()
+      textColor: 'text-green-600',
+      bgColor: 'bg-green-50'
     },
     {
       title: 'Total Nilai Qurban',
-      value: stats?.total_nilai_qurban || 0,
-      icon: DollarSign,
-      color: 'from-teal-500 to-teal-600',
-      bgColor: 'bg-teal-50',
-      iconColor: 'text-teal-600',
-      format: (val: number) => `Rp ${(val / 1000000).toFixed(1)}M`
+      value: formatCurrency(stats?.total_nilai_qurban || 0),
+      subtitle: 'Terkumpul',
+      icon: TrendingUp,
+      color: 'from-emerald-500 to-emerald-600',
+      textColor: 'text-emerald-600',
+      bgColor: 'bg-emerald-50'
+    },
+    {
+      title: 'Sebaran Wilayah',
+      value: stats?.kabupaten_coverage?.toString() || '0',
+      subtitle: 'Kabupaten',
+      icon: MapPin,
+      color: 'from-purple-500 to-purple-600',
+      textColor: 'text-purple-600',
+      bgColor: 'bg-purple-50'
     }
   ];
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {[...Array(5)].map((_, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-lg p-6 animate-pulse">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
-              <div className="w-6 h-6 bg-gray-200 rounded"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <div className="animate-pulse">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gray-300 rounded-xl"></div>
+              </div>
+              <div className="space-y-3">
+                <div className="w-full h-6 bg-gray-300 rounded"></div>
+                <div className="w-3/4 h-4 bg-gray-300 rounded"></div>
+              </div>
             </div>
-            <div className="h-8 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
           </div>
         ))}
       </div>
@@ -74,42 +98,48 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-      {cards.map((card, index) => {
-        const IconComponent = card.icon;
-        return (
+    <div className="space-y-6">
+      {/* Main Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {cards.map((card, index) => (
           <div
             key={index}
-            className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
+            className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300"
           >
+            {/* Header */}
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-xl ${card.bgColor}`}>
-                <IconComponent className={`w-6 h-6 ${card.iconColor}`} />
+              <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center`}>
+                <card.icon className="w-6 h-6 text-white" />
               </div>
-              <TrendingUp className="w-4 h-4 text-green-500" />
             </div>
-            
+
+            {/* Content */}
             <div className="space-y-2">
-              <div className="text-2xl font-bold text-gray-900">
-                {card.format(card.value)}
-              </div>
-              <div className="text-sm text-gray-600">
-                {card.title}
-              </div>
-            </div>
-            
-            {/* Progress bar or indicator */}
-            <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className={`h-2 rounded-full bg-gradient-to-r ${card.color}`}
-                  style={{ width: '75%' }} // Mock progress, can be dynamic
-                ></div>
+              <h3 className="text-sm font-medium text-gray-600">{card.title}</h3>
+              <div className="flex items-end space-x-2">
+                <span className="text-3xl font-bold text-gray-900">{card.value}</span>
+                <span className="text-sm text-gray-500 pb-1">{card.subtitle}</span>
               </div>
             </div>
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      {/* Animal Breakdown Card - Only if data exists */}
+      {Object.keys(animalBreakdown).length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Jenis Hewan Qurban</h3>
+          <div className="grid grid-cols-3 gap-6">
+            {Object.entries(animalBreakdown).map(([jenis, count]) => (
+              <div key={jenis} className="text-center">
+                <div className="text-4xl mb-2">{getAnimalIcon(jenis)}</div>
+                <div className="text-2xl font-bold text-gray-900">{count}</div>
+                <div className="text-sm text-gray-600">{jenis}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
