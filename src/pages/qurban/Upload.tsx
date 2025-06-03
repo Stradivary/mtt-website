@@ -33,31 +33,71 @@ const Upload = () => {
     setLoginError('');
     
     try {
-      // Import supabase admin client to authenticate uploader
-      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
+      // Demo mode for testing - only for actual demo keys
+      const demoKeys = ['demo', 'test'];
+      const isDemoMode = demoKeys.some(key => uploadKey.toLowerCase().startsWith(key.toLowerCase()));
       
-      // Query the uploaders table for the provided upload key
-      const { data: uploaderData, error } = await supabaseAdmin
-        .from(TABLES.UPLOADERS)
-        .select('*')
-        .eq('upload_key', uploadKey.trim())
-        .eq('is_active', true)
-        .single();
-      
-      if (error || !uploaderData) {
-        console.error('Authentication failed:', error);
-        setLoginError('Kode akses tidak valid atau tidak aktif. Hubungi admin jika Anda yakin kode benar.');
+      if (isDemoMode) {
+        // Demo authentication - create mock uploader
+        const demoUploader = {
+          id: '550e8400-e29b-41d4-a716-446655440001',
+          email: 'demo@mtt.org',
+          name: 'Demo User',
+          mitra_name: 'Demo Mitra',
+          upload_key: uploadKey,
+          is_active: true
+        };
+        
+        setIsAuthenticated(true);
+        setUploader(demoUploader);
+        console.log('✅ Demo mode authenticated as:', demoUploader.name, '(' + demoUploader.mitra_name + ')');
         return;
       }
       
-      // Successful authentication
-      setIsAuthenticated(true);
-      setUploader(uploaderData);
-      console.log('✅ Authenticated as:', uploaderData.name, '(' + uploaderData.mitra_name + ')');
+      // Try real authentication for all non-demo keys
+      try {
+        const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
+        
+        // Test connection first
+        const connectionTest = await supabaseAdmin
+          .from('uploaders')
+          .select('id')
+          .limit(1);
+          
+        if (connectionTest.error) {
+          console.warn('⚠️ Supabase connection failed:', connectionTest.error);
+          throw new Error('Connection failed');
+        }
+        
+        console.log('🔧 Supabase connection successful, attempting authentication...');
+        
+        // Query the uploaders table for the provided upload key
+        const { data: uploaderData, error } = await supabaseAdmin
+          .from(TABLES.UPLOADERS)
+          .select('*')
+          .eq('upload_key', uploadKey.trim())
+          .eq('is_active', true)
+          .single();
+        
+        if (error || !uploaderData) {
+          console.error('Authentication failed:', error);
+          setLoginError('Kode akses tidak valid atau tidak aktif. Hubungi admin untuk bantuan.');
+          return;
+        }
+        
+        // Successful authentication
+        setIsAuthenticated(true);
+        setUploader(uploaderData);
+        console.log('✅ Authenticated as:', uploaderData.name, '(' + uploaderData.mitra_name + ')');
+        
+      } catch (dbError) {
+        console.error('Database authentication failed:', dbError);
+        setLoginError('Koneksi database gagal. Pastikan koneksi internet stabil dan coba lagi.');
+      }
       
     } catch (error) {
       console.error('Login error:', error);
-      setLoginError('Terjadi kesalahan saat login. Coba lagi atau hubungi admin.');
+      setLoginError('Terjadi kesalahan saat login. Silakan coba lagi.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -285,7 +325,13 @@ const Upload = () => {
 
   const fetchExistingData = async (type: 'muzakki' | 'distribusi'): Promise<any[]> => {
     try {
-      // Import supabase admin client to bypass RLS
+      // Check if we're in actual demo mode (Demo Mitra)
+      if (uploader?.mitra_name === 'Demo Mitra') {
+        console.log('🎭 Demo mode: Returning empty existing data...');
+        return [];
+      }
+
+      // Real database operations for authenticated users
       const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
       
       if (type === 'muzakki') {
@@ -295,10 +341,10 @@ const Upload = () => {
         
         if (error) {
           console.error('Error fetching muzakki data:', error);
-          return [];
+          throw new Error(`Failed to fetch muzakki data: ${error.message}`);
         }
         
-        console.log(`Fetched ${data?.length || 0} existing muzakki records`);
+        console.log(`✅ Fetched ${data?.length || 0} existing muzakki records`);
         return data || [];
       } else {
         const { data, error } = await supabaseAdmin
@@ -307,33 +353,56 @@ const Upload = () => {
         
         if (error) {
           console.error('Error fetching distribusi data:', error);
-          return [];
+          throw new Error(`Failed to fetch distribusi data: ${error.message}`);
         }
         
-        console.log(`Fetched ${data?.length || 0} existing distribusi records`);
+        console.log(`✅ Fetched ${data?.length || 0} existing distribusi records`);
         return data || [];
       }
     } catch (error) {
       console.error('Error connecting to database:', error);
-      return [];
+      throw error;
     }
   };
 
   const saveToDatabase = async (type: string, records: any[]): Promise<void> => {
     try {
-      // Import supabase admin client to bypass RLS
-      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
-      
       if (records.length === 0) {
         console.log('No records to save');
         return;
       }
+
+      // Check if we're in actual demo mode (Demo Mitra)
+      if (uploader?.mitra_name === 'Demo Mitra') {
+        console.log('🎭 Demo mode: Simulating database save...');
+        console.log(`📊 Would save ${records.length} ${type} records to database`);
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('✅ Demo: Database save completed successfully');
+        return;
+      }
+
+      // Real database operations for authenticated users
+      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
       
-      // Add uploader_id to all records
-      const recordsWithUploader = records.map(record => ({
+      // Step 1: Normalize location data to handle variations
+      console.log(`🔧 Normalizing ${records.length} ${type} records...`);
+      const normalizedRecords = normalizeLocationData(records);
+      
+      // Step 2: Ensure reference data exists
+      console.log('🔧 Ensuring reference data exists...');
+      await ensureReferenceData(normalizedRecords);
+      
+      // Step 3: Add uploader_id to all records
+      const recordsWithUploader = normalizedRecords.map(record => ({
         ...record,
-        uploader_id: uploader?.id || '550e8400-e29b-41d4-a716-446655440001'
+        uploader_id: uploader?.id
       }));
+      
+      // Step 4: Save to appropriate table
+      console.log(`💾 Saving ${recordsWithUploader.length} ${type} records to database...`);
       
       if (type === 'muzakki') {
         const { error } = await supabaseAdmin
@@ -355,20 +424,371 @@ const Upload = () => {
         }
       }
       
-      console.log(`Successfully saved ${records.length} ${type} records to database`);
+      console.log(`✅ Successfully saved ${recordsWithUploader.length} ${type} records to database`);
     } catch (error) {
       console.error('Error saving to database:', error);
       throw error;
     }
   };
 
+  // Enhanced function to ensure reference data exists with proper error handling
+  const ensureReferenceData = async (records: any[]): Promise<void> => {
+    try {
+      const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
+      
+      // Extract unique province and kabupaten codes from records (filter out empty values)
+      const uniqueProvinsi = [...new Set(records.map(r => r.kode_provinsi).filter(Boolean))];
+      const uniqueKabupaten = [...new Set(records.map(r => r.kode_kabupaten).filter(Boolean))];
+      
+      if (uniqueProvinsi.length === 0 && uniqueKabupaten.length === 0) {
+        console.log('No reference data codes found in records');
+        return;
+      }
+      
+      // Handle provinces with proper error handling
+      if (uniqueProvinsi.length > 0) {
+        try {
+          // Check existing provinces
+          const { data: existingProvinsi } = await supabaseAdmin
+            .from(TABLES.REF_PROVINSI)
+            .select('kode_provinsi')
+            .in('kode_provinsi', uniqueProvinsi);
+          
+          const existingProvinsiCodes = new Set(existingProvinsi?.map(p => p.kode_provinsi) || []);
+          const missingProvinsi = uniqueProvinsi.filter(code => !existingProvinsiCodes.has(code));
+          
+          // Insert missing provinces one by one to handle conflicts gracefully
+          for (const code of missingProvinsi) {
+            try {
+              const provinsiData = {
+                kode_provinsi: code,
+                nama_provinsi: getProvinsiName(code) || `Provinsi ${code}`
+              };
+              
+              const { error: provinsiError } = await supabaseAdmin
+                .from(TABLES.REF_PROVINSI)
+                .insert([provinsiData]);
+              
+              if (provinsiError) {
+                // If it's a duplicate key error, it means someone else inserted it, which is fine
+                if (provinsiError.code === '23505') {
+                  console.log(`✅ Provinsi ${code} already exists (concurrent insert)`);
+                } else {
+                  console.error(`Error inserting provinsi ${code}:`, provinsiError);
+                }
+              } else {
+                console.log(`✅ Inserted provinsi: ${code} - ${getProvinsiName(code)}`);
+              }
+            } catch (insertError) {
+              console.warn(`Failed to insert provinsi ${code}:`, insertError);
+            }
+          }
+        } catch (error) {
+          console.error('Error handling provinces:', error);
+        }
+      }
+      
+      // Handle kabupaten with proper error handling
+      if (uniqueKabupaten.length > 0) {
+        try {
+          // Check existing kabupaten
+          const { data: existingKabupaten } = await supabaseAdmin
+            .from(TABLES.REF_KABUPATEN)
+            .select('kode_kabupaten')
+            .in('kode_kabupaten', uniqueKabupaten);
+          
+          const existingKabupatenCodes = new Set(existingKabupaten?.map(k => k.kode_kabupaten) || []);
+          const missingKabupaten = uniqueKabupaten.filter(code => !existingKabupatenCodes.has(code));
+          
+          // Insert missing kabupaten one by one to handle conflicts gracefully
+          for (const code of missingKabupaten) {
+            try {
+              const provinsiCode = records.find(r => r.kode_kabupaten === code)?.kode_provinsi;
+              const kabupatenData = {
+                kode_kabupaten: code,
+                nama_kabupaten: getKabupatenName(code) || `Kabupaten ${code}`,
+                kode_provinsi: provinsiCode || uniqueProvinsi[0] || '35'
+              };
+              
+              const { error: kabupatenError } = await supabaseAdmin
+                .from(TABLES.REF_KABUPATEN)
+                .insert([kabupatenData]);
+              
+              if (kabupatenError) {
+                // If it's a duplicate key error, it means someone else inserted it, which is fine
+                if (kabupatenError.code === '23505') {
+                  console.log(`✅ Kabupaten ${code} already exists (concurrent insert)`);
+                } else {
+                  console.error(`Error inserting kabupaten ${code}:`, kabupatenError);
+                }
+              } else {
+                console.log(`✅ Inserted kabupaten: ${code} - ${getKabupatenName(code)}`);
+              }
+            } catch (insertError) {
+              console.warn(`Failed to insert kabupaten ${code}:`, insertError);
+            }
+          }
+        } catch (error) {
+          console.error('Error handling kabupaten:', error);
+        }
+      }
+      
+      console.log('✅ Reference data validation completed');
+      
+    } catch (error) {
+      console.error('Error ensuring reference data:', error);
+      // Don't throw here, let the main insert continue
+    }
+  };
+
+  // Enhanced function to normalize and validate location data
+  const normalizeLocationData = (records: any[]): any[] => {
+    return records.map(record => {
+      const normalized = { ...record };
+      
+      // Normalize province name variations
+      if (normalized.nama_provinsi) {
+        const provinsi = normalized.nama_provinsi.toLowerCase().trim();
+        
+        if (provinsi.includes('jakarta') || provinsi.includes('dki')) {
+          normalized.kode_provinsi = '31';
+          normalized.nama_provinsi = 'DKI Jakarta';
+        } else if (provinsi.includes('jawa timur') || provinsi.includes('jatim')) {
+          normalized.kode_provinsi = '35';
+          normalized.nama_provinsi = 'Jawa Timur';
+        } else if (provinsi.includes('jawa barat') || provinsi.includes('jabar')) {
+          normalized.kode_provinsi = '32';
+          normalized.nama_provinsi = 'Jawa Barat';
+        } else if (provinsi.includes('jawa tengah') || provinsi.includes('jateng')) {
+          normalized.kode_provinsi = '33';
+          normalized.nama_provinsi = 'Jawa Tengah';
+        } else if (provinsi.includes('yogyakarta') || provinsi.includes('jogja')) {
+          normalized.kode_provinsi = '34';
+          normalized.nama_provinsi = 'DI Yogyakarta';
+        }
+      }
+      
+      // Normalize kabupaten/kota name variations
+      if (normalized.nama_kabupaten || normalized.alamat) {
+        const location = (normalized.nama_kabupaten || normalized.alamat || '').toLowerCase().trim();
+        
+        // Jakarta variations
+        if (location.includes('jakarta selatan') || location.includes('jaksel')) {
+          normalized.kode_kabupaten = '3171';
+          normalized.nama_kabupaten = 'Jakarta Selatan';
+          normalized.kode_provinsi = '31';
+        } else if (location.includes('jakarta timur') || location.includes('jaktim')) {
+          normalized.kode_kabupaten = '3172';
+          normalized.nama_kabupaten = 'Jakarta Timur';
+          normalized.kode_provinsi = '31';
+        } else if (location.includes('jakarta pusat') || location.includes('jakpus')) {
+          normalized.kode_kabupaten = '3173';
+          normalized.nama_kabupaten = 'Jakarta Pusat';
+          normalized.kode_provinsi = '31';
+        } else if (location.includes('jakarta barat') || location.includes('jakbar')) {
+          normalized.kode_kabupaten = '3174';
+          normalized.nama_kabupaten = 'Jakarta Barat';
+          normalized.kode_provinsi = '31';
+        } else if (location.includes('jakarta utara') || location.includes('jakut')) {
+          normalized.kode_kabupaten = '3175';
+          normalized.nama_kabupaten = 'Jakarta Utara';
+          normalized.kode_provinsi = '31';
+        
+        // Jawa Timur variations
+        } else if (location.includes('surabaya') || location.includes('sby')) {
+          normalized.kode_kabupaten = '3578';
+          normalized.nama_kabupaten = 'Kota Surabaya';
+          normalized.kode_provinsi = '35';
+        } else if (location.includes('gresik')) {
+          normalized.kode_kabupaten = '3525';
+          normalized.nama_kabupaten = 'Kabupaten Gresik';
+          normalized.kode_provinsi = '35';
+        } else if (location.includes('sidoarjo')) {
+          normalized.kode_kabupaten = '3515';
+          normalized.nama_kabupaten = 'Kabupaten Sidoarjo';
+          normalized.kode_provinsi = '35';
+        } else if (location.includes('malang') && (location.includes('kota') || location.includes('kab'))) {
+          if (location.includes('kota')) {
+            normalized.kode_kabupaten = '3573';
+            normalized.nama_kabupaten = 'Kota Malang';
+          } else {
+            normalized.kode_kabupaten = '3507';
+            normalized.nama_kabupaten = 'Kabupaten Malang';
+          }
+          normalized.kode_provinsi = '35';
+        
+        // Jawa Barat variations
+        } else if (location.includes('bogor')) {
+          if (location.includes('kota')) {
+            normalized.kode_kabupaten = '3271';
+            normalized.nama_kabupaten = 'Kota Bogor';
+          } else {
+            normalized.kode_kabupaten = '3201';
+            normalized.nama_kabupaten = 'Kabupaten Bogor';
+          }
+          normalized.kode_provinsi = '32';
+        } else if (location.includes('bandung')) {
+          if (location.includes('kota')) {
+            normalized.kode_kabupaten = '3273';
+            normalized.nama_kabupaten = 'Kota Bandung';
+          } else if (location.includes('barat')) {
+            normalized.kode_kabupaten = '3217';
+            normalized.nama_kabupaten = 'Kabupaten Bandung Barat';
+          } else {
+            normalized.kode_kabupaten = '3204';
+            normalized.nama_kabupaten = 'Kabupaten Bandung';
+          }
+          normalized.kode_provinsi = '32';
+        } else if (location.includes('depok')) {
+          normalized.kode_kabupaten = '3276';
+          normalized.nama_kabupaten = 'Kota Depok';
+          normalized.kode_provinsi = '32';
+        } else if (location.includes('bekasi')) {
+          if (location.includes('kota')) {
+            normalized.kode_kabupaten = '3275';
+            normalized.nama_kabupaten = 'Kota Bekasi';
+          } else {
+            normalized.kode_kabupaten = '3216';
+            normalized.nama_kabupaten = 'Kabupaten Bekasi';
+          }
+          normalized.kode_provinsi = '32';
+        
+        // Jawa Tengah variations
+        } else if (location.includes('semarang')) {
+          if (location.includes('kota')) {
+            normalized.kode_kabupaten = '3374';
+            normalized.nama_kabupaten = 'Kota Semarang';
+          } else {
+            normalized.kode_kabupaten = '3304';
+            normalized.nama_kabupaten = 'Kabupaten Semarang';
+          }
+          normalized.kode_provinsi = '33';
+        } else if (location.includes('solo') || location.includes('surakarta')) {
+          normalized.kode_kabupaten = '3372';
+          normalized.nama_kabupaten = 'Kota Surakarta';
+          normalized.kode_provinsi = '33';
+        
+        // Yogyakarta variations
+        } else if (location.includes('yogyakarta') || location.includes('jogja') || location.includes('yogya')) {
+          if (location.includes('kota') || !location.includes('kabupaten')) {
+            normalized.kode_kabupaten = '3471';
+            normalized.nama_kabupaten = 'Kota Yogyakarta';
+          }
+          normalized.kode_provinsi = '34';
+        } else if (location.includes('bantul')) {
+          normalized.kode_kabupaten = '3402';
+          normalized.nama_kabupaten = 'Kabupaten Bantul';
+          normalized.kode_provinsi = '34';
+        } else if (location.includes('sleman')) {
+          normalized.kode_kabupaten = '3404';
+          normalized.nama_kabupaten = 'Kabupaten Sleman';
+          normalized.kode_provinsi = '34';
+        }
+      }
+      
+      return normalized;
+    });
+  };
+
+  // Helper functions to get proper names
+  const getProvinsiName = (code: string): string | null => {
+    const provinsiMap: Record<string, string> = {
+      '35': 'Jawa Timur',
+      '31': 'DKI Jakarta',
+      '32': 'Jawa Barat',
+      '33': 'Jawa Tengah',
+      '34': 'DI Yogyakarta',
+      '36': 'Banten',
+      '12': 'Sumatra Utara',
+      '13': 'Sumatra Barat',
+      '14': 'Riau',
+      '15': 'Jambi',
+      '16': 'Sumatra Selatan',
+      '17': 'Bengkulu',
+      '18': 'Lampung',
+      '19': 'Kepulauan Bangka Belitung',
+      '21': 'Kepulauan Riau',
+      '51': 'Bali',
+      '52': 'Nusa Tenggara Barat',
+      '53': 'Nusa Tenggara Timur',
+      '61': 'Kalimantan Barat',
+      '62': 'Kalimantan Tengah',
+      '63': 'Kalimantan Selatan',
+      '64': 'Kalimantan Timur',
+      '65': 'Kalimantan Utara',
+      '71': 'Sulawesi Utara',
+      '72': 'Sulawesi Tengah',
+      '73': 'Sulawesi Selatan',
+      '74': 'Sulawesi Tenggara',
+      '75': 'Gorontalo',
+      '76': 'Sulawesi Barat',
+      '81': 'Maluku',
+      '82': 'Maluku Utara',
+      '91': 'Papua Barat',
+      '94': 'Papua'
+    };
+    return provinsiMap[code] || null;
+  };
+
+  const getKabupatenName = (code: string): string | null => {
+    const kabupatenMap: Record<string, string> = {
+      // Jawa Timur
+      '3578': 'Kota Surabaya',
+      '3525': 'Kabupaten Gresik',
+      '3515': 'Kabupaten Sidoarjo',
+      '3573': 'Kota Malang',
+      '3507': 'Kabupaten Malang',
+      '3576': 'Kota Mojokerto',
+      '3517': 'Kabupaten Mojokerto',
+      
+      // DKI Jakarta
+      '3171': 'Jakarta Selatan',
+      '3172': 'Jakarta Timur',
+      '3173': 'Jakarta Pusat',
+      '3174': 'Jakarta Barat',
+      '3175': 'Jakarta Utara',
+      '3101': 'Kepulauan Seribu',
+      
+      // Jawa Barat
+      '3201': 'Kabupaten Bogor',
+      '3271': 'Kota Bogor',
+      '3273': 'Kota Bandung',
+      '3204': 'Kabupaten Bandung',
+      '3217': 'Kabupaten Bandung Barat',
+      '3276': 'Kota Depok',
+      '3275': 'Kota Bekasi',
+      '3216': 'Kabupaten Bekasi',
+      
+      // Jawa Tengah
+      '3304': 'Kabupaten Semarang',
+      '3374': 'Kota Semarang',
+      '3372': 'Kota Surakarta',
+      '3313': 'Kabupaten Sukoharjo',
+      
+      // DI Yogyakarta
+      '3471': 'Kota Yogyakarta',
+      '3401': 'Kabupaten Kulon Progo',
+      '3402': 'Kabupaten Bantul',
+      '3403': 'Kabupaten Gunung Kidul',
+      '3404': 'Kabupaten Sleman'
+    };
+    return kabupatenMap[code] || null;
+  };
+
   const saveUploadHistory = async (upload: FileUpload, result: ProcessedUploadResult): Promise<void> => {
     try {
-      // Import supabase admin client to bypass RLS
+      // Check if we're in actual demo mode (Demo Mitra)
+      if (uploader?.mitra_name === 'Demo Mitra') {
+        console.log('🎭 Demo mode: Simulating upload history save...');
+        console.log(`📊 Would save upload history for ${upload.file.name}`);
+        return;
+      }
+
+      // Real database operations for authenticated users
       const { supabaseAdmin, TABLES } = await import('../../lib/supabase');
       
       const uploadHistory = {
-        uploader_id: uploader?.id || '550e8400-e29b-41d4-a716-446655440001',
+        uploader_id: uploader?.id,
         filename: upload.file.name,
         file_type: upload.type!,
         total_records: result.totalRecords,
@@ -387,9 +807,9 @@ const Upload = () => {
       
       if (error) {
         console.error('Error saving upload history:', error);
-        // Don't throw error here as the main upload was successful
+        throw new Error(`Failed to save upload history: ${error.message}`);
       } else {
-        console.log('Upload history saved successfully');
+        console.log('✅ Upload history saved successfully');
       }
     } catch (error) {
       console.error('Error saving upload history:', error);

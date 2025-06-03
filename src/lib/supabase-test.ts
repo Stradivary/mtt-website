@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from './supabase'
 
-// Supabase Configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key'
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Re-export for compatibility
+export const supabase = supabaseAdmin
 
 // Test Supabase Connection
 export async function testSupabaseConnection() {
@@ -12,7 +9,7 @@ export async function testSupabaseConnection() {
     console.log('🔍 Testing Supabase connection...')
     
     // Test basic connection
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('ref_provinsi')
       .select('count(*)', { count: 'exact' })
     
@@ -36,7 +33,7 @@ export async function insertIndonesiaReferenceData() {
     console.log('🗺️ Starting Indonesia reference data insertion...')
     
     // Check if data already exists
-    const { data: existingProvinces } = await supabase
+    const { data: existingProvinces } = await supabaseAdmin
       .from('ref_provinsi')
       .select('count(*)', { count: 'exact' })
     
@@ -88,7 +85,7 @@ export async function insertIndonesiaReferenceData() {
     ]
     
     console.log('📍 Inserting provinces...')
-    const { error: provincesError } = await supabase
+    const { error: provincesError } = await supabaseAdmin
       .from('ref_provinsi')
       .insert(provinces)
     
@@ -127,7 +124,7 @@ export async function insertIndonesiaReferenceData() {
     ]
     
     console.log('🏘️ Inserting kabupaten/kota...')
-    const { error: kabupatenError } = await supabase
+    const { error: kabupatenError } = await supabaseAdmin
       .from('ref_kabupaten')
       .insert(kabupaten)
     
@@ -139,11 +136,11 @@ export async function insertIndonesiaReferenceData() {
     console.log('✅ Kabupaten/kota inserted successfully!')
     
     // Get final counts
-    const { data: finalProvinces } = await supabase
+    const { data: finalProvinces } = await supabaseAdmin
       .from('ref_provinsi')
       .select('count(*)', { count: 'exact' })
     
-    const { data: finalKabupaten } = await supabase
+    const { data: finalKabupaten } = await supabaseAdmin
       .from('ref_kabupaten')
       .select('count(*)', { count: 'exact' })
     
@@ -193,7 +190,7 @@ export async function testDashboardDataInsertion() {
       }
     ]
     
-    const { error: qurbanError } = await supabase
+    const { error: qurbanError } = await supabaseAdmin
       .from('qurban_pendaftaran')
       .insert(sampleQurbanData)
     
@@ -205,7 +202,7 @@ export async function testDashboardDataInsertion() {
     console.log('✅ Sample qurban data inserted successfully!')
     
     // Test data retrieval for dashboard
-    const { data: dashboardData, error: dashboardError } = await supabase
+    const { data: dashboardData, error: dashboardError } = await supabaseAdmin
       .from('dashboard_summary')
       .select('*')
       .limit(5)
