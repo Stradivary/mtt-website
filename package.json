@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "start": "vite preview",
+    "lint": "eslint .",
     "test:supabase": "node scripts/test-supabase.js",
     "setup:db": "node scripts/test-supabase.js"
   },

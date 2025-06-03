@@ -1,0 +1,21 @@
+nama_penerima,alamat_penerima,kode_provinsi,kode_kabupaten,jenis_hewan,jumlah_daging,tanggal_distribusi,foto_distribusi_url,status,catatan
+Pak Samsul,Masjid Al-Akbar Surabaya RT 03 RW 07 Gubeng,35,3578,sapi,15.5,2025-06-17,https://example.com/distribusi/foto1.jpg,distributed,Pembagian daging sapi kepada jamaah masjid
+Bu Aminah,Balai RW 05 Wonokromo Surabaya,35,3578,kambing,8.2,2025-06-17,https://example.com/distribusi/foto2.jpg,distributed,Daging kambing untuk warga kurang mampu
+Pak Joko,Lapangan Gresik Kota RT 02 RW 04,35,3525,sapi,12.0,2025-06-17,https://example.com/distribusi/foto3.jpg,distributed,Pembagian daging kepada masyarakat sekitar
+Bu Siti,Kantor Kecamatan Waru Sidoarjo,35,3515,domba,6.5,2025-06-17,https://example.com/distribusi/foto4.jpg,distributed,Distribusi daging domba untuk fakir miskin
+Bu Kartini,Masjid Jami Malang RT 01 RW 03,35,3573,sapi,14.8,2025-06-17,https://example.com/distribusi/foto5.jpg,distributed,Daging sapi untuk jamaah dan tetangga
+Pak Budi,Kelurahan Gubeng Surabaya,35,3578,kambing,7.3,2025-06-17,https://example.com/distribusi/foto6.jpg,distributed,Pembagian kepada kepala keluarga kurang mampu
+Bu Fatimah,Perumahan Griya Gresik Kota,35,3525,sapi,13.2,2025-06-17,https://example.com/distribusi/foto7.jpg,distributed,Distribusi daging untuk tetangga sekitar
+Pak Soleh,Desa Waru Barat Sidoarjo,35,3515,domba,5.8,2025-06-17,https://example.com/distribusi/foto8.jpg,distributed,Daging domba untuk warga desa
+Bu Khadijah,Gang Masjid Malang Kota,35,3573,kambing,9.1,2025-06-17,https://example.com/distribusi/foto9.jpg,distributed,Pembagian daging kambing kepada tetangga
+Pak Ali,Kampung Wonokromo Surabaya,35,3578,sapi,16.3,2025-06-17,https://example.com/distribusi/foto10.jpg,distributed,Distribusi untuk keluarga kurang mampu
+Bu Zahra,RT 08 RW 05 Gresik Kota,35,3525,domba,6.9,2025-06-17,https://example.com/distribusi/foto11.jpg,distributed,Daging domba untuk ibu-ibu PKK
+Pak Rudi,Jalan Masjid Waru Sidoarjo,35,3515,sapi,11.7,2025-06-17,https://example.com/distribusi/foto12.jpg,distributed,Pembagian kepada pengurus masjid
+Bu Nana,Komplek Perumahan Malang,35,3573,kambing,8.6,2025-06-17,https://example.com/distribusi/foto13.jpg,distributed,Distribusi daging kambing untuk warga komplek
+Pak Tono,Kelurahan Gubeng Surabaya,35,3578,domba,7.4,2025-06-17,https://example.com/distribusi/foto14.jpg,distributed,Daging domba untuk fakir miskin kelurahan
+Ibu Mariam,Dusun Gresik Utara,35,3525,sapi,15.1,2025-06-17,https://example.com/distribusi/foto15.jpg,distributed,Pembagian kepada warga dusun sekitar
+Pak Usman,Gang Kartini Sidoarjo,35,3515,kambing,8.9,2025-06-17,https://example.com/distribusi/foto16.jpg,distributed,Distribusi untuk kepala keluarga miskin
+Bu Aisyah,Perumahan Malang Indah,35,3573,domba,6.2,2025-06-17,https://example.com/distribusi/foto17.jpg,distributed,Daging domba untuk tetangga komplek
+Pak Ahmad,RT 12 RW 06 Surabaya,35,3578,sapi,14.5,2025-06-17,https://example.com/distribusi/foto18.jpg,distributed,Pembagian daging sapi untuk warga RT
+Bu Sari,Kampung Nelayan Gresik,35,3525,kambing,7.8,2025-06-17,https://example.com/distribusi/foto19.jpg,distributed,Distribusi kepada keluarga nelayan
+Pak Hasan,Desa Waru Timur Sidoarjo,35,3515,domba,5.5,2025-06-17,https://example.com/distribusi/foto20.jpg,distributed,Daging domba untuk warga desa 
