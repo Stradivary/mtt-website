@@ -2,28 +2,43 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { DashboardStats, KabupatenData, RecentActivity } from '../types/qurban';
 
-interface DistribusiWithUploader {
-  kabupaten: string | null;
-  provinsi: string | null;
-  created_at: string;
-  uploader_id: string;
-  uploaders: {
+interface AdvancedAnalytics {
+  daily_trends: Array<{
+    date: string;
+    muzakki_count: number;
+    distribusi_count: number;
+    upload_count: number;
+  }>;
+  top_kabupaten_performance: Array<{
     name: string;
+    penerima: number;
+    hewan: number;
+    percentage: number;
+  }>;
+  provinsi_breakdown: Array<{
+    provinsi: string;
+    total_penerima: number;
+    percentage: number;
+    color: string;
+  }>;
+  mitra_performance: Array<{
     mitra_name: string;
-  } | null;
+    total_uploads: number;
+    successful_records: number;
+    failed_records: number;
+    muzakki_count: number;
+    distribusi_count: number;
+    success_rate: number;
+  }>;
 }
 
-interface UploadHistoryWithUploader {
-  id: string;
-  filename: string;
-  file_type: string;
-  successful_records: number;
-  duplicates?: number;
+interface ActivityFeedItem {
+  activity_type: string;
+  activity_id: string;
+  mitra_name: string;
+  description: string;
   created_at: string;
-  uploaders: {
-    name: string;
-    mitra_name: string;
-  };
+  metadata: any;
 }
 
 export const useDashboardData = (autoRefresh: boolean = false) => {
@@ -43,14 +58,26 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
   const [chartData, setChartData] = useState<{
     topKabupaten: Array<{ name: string; penerima: number; hewan: number }>;
     dailyProgress: Array<{ date: string; muzakki: number; distribusi: number }>;
+    provinsiBreakdown: Array<{ provinsi: string; count: number; percentage: number; color: string }>;
   }>({
     topKabupaten: [],
-    dailyProgress: []
+    dailyProgress: [],
+    provinsiBreakdown: []
+  });
+
+  const [advancedStats, setAdvancedStats] = useState({
+    distribution_progress: 0,
+    uploads_last_7_days: 0,
+    distributions_last_7_days: 0,
+    active_mitras: 0,
+    avg_nilai_qurban: 0,
+    total_failed_records: 0,
+    total_successful_records: 0
   });
 
   const fetchDashboardStats = async () => {
     try {
-      // Get summary data from dashboard_summary view
+      // Get basic stats from dashboard_summary view
       const { data: summaryData, error: summaryError } = await supabase
         .from('dashboard_summary')
         .select('*')
@@ -69,6 +96,16 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
           kabupaten_coverage: summaryData.kabupaten_coverage || 0,
           total_nilai_qurban: summaryData.total_nilai_qurban || 0,
         });
+
+        setAdvancedStats({
+          distribution_progress: summaryData.distribution_progress || 0,
+          uploads_last_7_days: summaryData.uploads_last_7_days || 0,
+          distributions_last_7_days: summaryData.distributions_last_7_days || 0,
+          active_mitras: summaryData.active_mitras || 0,
+          avg_nilai_qurban: summaryData.avg_nilai_qurban || 0,
+          total_failed_records: summaryData.total_failed_records || 0,
+          total_successful_records: summaryData.total_successful_records || 0
+        });
       }
     } catch (err) {
       console.error('Error in fetchDashboardStats:', err);
@@ -76,150 +113,186 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
     }
   };
 
-  const fetchKabupatenData = async () => {
+  const fetchAdvancedAnalytics = async () => {
     try {
-      // Get kabupaten breakdown from distribusi table
-      const { data: kabupatenStats, error: kabupatenError } = await supabase
-        .from('distribusi')
-        .select(`
-          kabupaten,
-          provinsi,
-          created_at,
-          uploader_id,
-          uploaders!inner(name, mitra_name)
-        `)
-        .order('created_at', { ascending: false });
+      // Get advanced analytics from new view
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('advanced_analytics')
+        .select('*')
+        .single();
 
-      if (kabupatenError) {
-        console.error('Error fetching kabupaten data:', kabupatenError);
-        throw kabupatenError;
+      if (analyticsError) {
+        console.error('Error fetching advanced analytics:', analyticsError);
+        // If view doesn't exist, fall back to basic calculation
+        console.log('Falling back to basic data calculation...');
+        await fetchBasicAnalytics();
+        return;
       }
 
-      // Process kabupaten data
-      const kabupatenMap = new Map<string, {
-        kabupaten: string;
-        provinsi: string;
-        total_penerima: number;
-        total_hewan: number;
-        active_mitra: Set<string>;
-        latest_distribution: string;
-      }>();
-
-      (kabupatenStats as DistribusiWithUploader[])?.forEach(item => {
-        const key = `${item.kabupaten}_${item.provinsi}`;
-        if (!kabupatenMap.has(key)) {
-          kabupatenMap.set(key, {
-            kabupaten: item.kabupaten || 'Tidak Diketahui',
-            provinsi: item.provinsi || 'Tidak Diketahui',
-            total_penerima: 0,
-            total_hewan: 0,
-            active_mitra: new Set(),
-            latest_distribution: item.created_at
-          });
-        }
+      if (analyticsData) {
+        // Process daily trends for chart
+        const dailyProgress = analyticsData.daily_trends || [];
         
-        const existing = kabupatenMap.get(key)!;
-        existing.total_penerima += 1;
-        existing.active_mitra.add(item.uploaders?.mitra_name || 'Unknown');
+        // Process top kabupaten
+        const topKabupaten = analyticsData.top_kabupaten_performance || [];
         
-        if (new Date(item.created_at) > new Date(existing.latest_distribution)) {
-          existing.latest_distribution = item.created_at;
-        }
-      });
+        // Process provinsi breakdown
+        const provinsiBreakdown = (analyticsData.provinsi_breakdown || []).map((item: any) => ({
+          provinsi: item.provinsi,
+          count: item.total_penerima,
+          percentage: item.percentage,
+          color: item.color
+        }));
 
-      // Convert to array and sort by total_penerima
-      const kabupatenArray = Array.from(kabupatenMap.values())
-        .map(item => ({
-          ...item,
-          active_mitra: Array.from(item.active_mitra)
-        }))
-        .sort((a, b) => b.total_penerima - a.total_penerima)
-        .slice(0, 10); // Top 10 kabupaten
+        setChartData({
+          topKabupaten,
+          dailyProgress: dailyProgress.map((day: any) => ({
+            date: day.date,
+            muzakki: day.muzakki_count,
+            distribusi: day.distribusi_count
+          })),
+          provinsiBreakdown
+        });
 
-      setKabupatenData(kabupatenArray);
+        // Create kabupaten data for the map section
+        const kabupatenArray = topKabupaten.slice(0, 10).map((item: any) => ({
+          kabupaten: item.name.split(',')[0] || 'Unknown',
+          provinsi: item.name.split(',')[1]?.trim() || 'Unknown',
+          total_penerima: item.penerima,
+          total_hewan: item.hewan,
+          active_mitra: ['Various'], // Will be populated separately if needed
+          latest_distribution: new Date().toISOString()
+        }));
+
+        setKabupatenData(kabupatenArray);
+      }
     } catch (err) {
-      console.error('Error in fetchKabupatenData:', err);
-      throw err;
+      console.error('Error in fetchAdvancedAnalytics:', err);
+      // Fall back to basic calculation
+      await fetchBasicAnalytics();
     }
   };
 
-  const fetchRecentActivities = async () => {
+  const fetchBasicAnalytics = async () => {
     try {
-      // Get recent upload activities from upload_history
-      const { data: uploadHistory, error: uploadError } = await supabase
-        .from('upload_history')
-        .select(`
-          *,
-          uploaders!inner(name, mitra_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (uploadError) {
-        console.error('Error fetching upload history:', uploadError);
-        throw uploadError;
-      }
-
-      // Convert upload history to activities
-      const activities: RecentActivity[] = (uploadHistory as UploadHistoryWithUploader[])?.map(upload => ({
-        id: upload.id,
-        type: 'upload',
-        description: `${upload.uploaders.mitra_name} mengupload ${upload.file_type} (${upload.successful_records} record berhasil${upload.duplicates && upload.duplicates > 0 ? `, ${upload.duplicates} duplikat` : ''})`,
-        timestamp: upload.created_at,
-        mitra: upload.uploaders.mitra_name
-      })) || [];
-
-      setRecentActivities(activities);
-    } catch (err) {
-      console.error('Error in fetchRecentActivities:', err);
-      throw err;
-    }
-  };
-
-  const fetchChartData = async () => {
-    try {
-      // Get top kabupaten data for charts
-      const { data: topKabupatenData, error: chartError } = await supabase
+      // Fallback: Basic analytics calculation when views don't exist
+      console.log('Using basic analytics fallback...');
+      
+      // Get top kabupaten from distribusi
+      const { data: distribusiData } = await supabase
         .from('distribusi')
         .select('kabupaten, provinsi')
         .not('kabupaten', 'is', null);
 
-      if (chartError) {
-        console.error('Error fetching chart data:', chartError);
-        throw chartError;
-      }
-
-      // Process for top kabupaten chart
+      // Process kabupaten data
       const kabupatenCounts: Record<string, number> = {};
-      topKabupatenData?.forEach(item => {
-        const key = item.kabupaten || 'Unknown';
-        kabupatenCounts[key] = (kabupatenCounts[key] || 0) + 1;
+      const provinsiCounts: Record<string, number> = {};
+      
+      distribusiData?.forEach(item => {
+        if (item.kabupaten && item.provinsi) {
+          const kabKey = `${item.kabupaten}, ${item.provinsi}`;
+          kabupatenCounts[kabKey] = (kabupatenCounts[kabKey] || 0) + 1;
+          provinsiCounts[item.provinsi] = (provinsiCounts[item.provinsi] || 0) + 1;
+        }
       });
 
+      // Top kabupaten
       const topKabupaten = Object.entries(kabupatenCounts)
-        .map(([name, count]) => ({ name, penerima: count, hewan: Math.floor(count * 0.7) }))
+        .map(([name, count]) => ({ name, penerima: count, hewan: Math.floor(count * 0.8) }))
         .sort((a, b) => b.penerima - a.penerima)
         .slice(0, 5);
 
-      // Generate daily progress data (mock for now)
-      const today = new Date();
+      // Provinsi breakdown with colors
+      const colors = ['#ef4444', '#f97316', '#eab308', '#6b7280', '#6b7280'];
+      const provinsiBreakdown = Object.entries(provinsiCounts)
+        .map(([provinsi, count], index) => ({
+          provinsi,
+          count,
+          percentage: Math.round((count / (distribusiData?.length || 1)) * 100),
+          color: colors[index] || '#6b7280'
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      // Mock daily progress (since we can't calculate it without date filtering)
       const dailyProgress = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date(today);
+        const date = new Date();
         date.setDate(date.getDate() - (6 - i));
         return {
           date: date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }),
-          muzakki: Math.floor(Math.random() * 50) + 20,
-          distribusi: Math.floor(Math.random() * 40) + 15
+          muzakki: Math.floor(Math.random() * 5) + 1,
+          distribusi: Math.floor(Math.random() * 5) + 1
         };
       });
 
       setChartData({
         topKabupaten,
-        dailyProgress
+        dailyProgress,
+        provinsiBreakdown
       });
+
+      // Kabupaten data for map
+      const kabupatenArray = topKabupaten.map((item: any) => ({
+        kabupaten: item.name.split(',')[0] || 'Unknown',
+        provinsi: item.name.split(',')[1]?.trim() || 'Unknown',
+        total_penerima: item.penerima,
+        total_hewan: item.hewan,
+        active_mitra: ['Various'],
+        latest_distribution: new Date().toISOString()
+      }));
+
+      setKabupatenData(kabupatenArray);
     } catch (err) {
-      console.error('Error in fetchChartData:', err);
-      throw err;
+      console.error('Error in fetchBasicAnalytics:', err);
+    }
+  };
+
+  const fetchActivityFeed = async () => {
+    try {
+      // Get recent activities from activity_feed view
+      const { data: activities, error: activitiesError } = await supabase
+        .from('activity_feed')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (activitiesError) {
+        console.error('Error fetching activity feed:', activitiesError);
+        // Fall back to basic upload history
+        const { data: uploadHistory } = await supabase
+          .from('upload_history')
+          .select(`
+            id, filename, file_type, successful_records, failed_records, created_at,
+            uploaders!inner(mitra_name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        const fallbackActivities: RecentActivity[] = (uploadHistory || []).map((upload: any) => ({
+          id: upload.id,
+          type: 'upload' as 'upload' | 'distribution' | 'registration',
+          description: `${upload.uploaders.mitra_name} mengupload ${upload.file_type} (${upload.successful_records} berhasil${upload.failed_records > 0 ? `, ${upload.failed_records} gagal` : ''})`,
+          timestamp: upload.created_at,
+          mitra: upload.uploaders.mitra_name
+        }));
+
+        setRecentActivities(fallbackActivities);
+        return;
+      }
+
+      // Convert to RecentActivity format
+      const recentActivities: RecentActivity[] = (activities || []).map((activity: ActivityFeedItem) => ({
+        id: activity.activity_id,
+        type: activity.activity_type as 'upload' | 'distribution' | 'registration',
+        description: activity.description,
+        timestamp: activity.created_at,
+        mitra: activity.mitra_name
+      }));
+
+      setRecentActivities(recentActivities);
+    } catch (err) {
+      console.error('Error in fetchActivityFeed:', err);
+      setRecentActivities([]);
     }
   };
 
@@ -230,9 +303,8 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
     try {
       await Promise.all([
         fetchDashboardStats(),
-        fetchKabupatenData(),
-        fetchRecentActivities(),
-        fetchChartData()
+        fetchAdvancedAnalytics(),
+        fetchActivityFeed()
       ]);
       
       setLoading(false);
@@ -265,6 +337,7 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
     kabupatenData,
     chartData,
     recentActivities,
+    advancedStats,
     loading,
     error,
     refreshData

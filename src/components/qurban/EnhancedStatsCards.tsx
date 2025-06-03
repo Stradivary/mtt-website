@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, TrendingUp, MapPin, Calendar, PieChart, Target } from 'lucide-react';
+import { Users, TrendingUp, MapPin, Calendar, PieChart, Target, DollarSign } from 'lucide-react';
 import { DashboardStats } from '../../types/qurban';
 
 interface EnhancedStatsCardsProps {
@@ -8,15 +8,14 @@ interface EnhancedStatsCardsProps {
 }
 
 // Format currency to readable format (100M, 2.5B, etc.)
-const formatCurrency = (amount: number): string => {
-  if (amount >= 1000000000) {
-    return `Rp ${(amount / 1000000000).toFixed(1)}B`;
-  } else if (amount >= 1000000) {
-    return `Rp ${(amount / 1000000).toFixed(0)}M`;
-  } else if (amount >= 1000) {
-    return `Rp ${(amount / 1000).toFixed(0)}K`;
+const formatCurrency = (value: number): string => {
+  if (value >= 1000000000) {
+    return `Rp ${(value / 1000000000).toFixed(1)}B`;
+  } else if (value >= 1000000) {
+    return `Rp ${(value / 1000000).toFixed(1)}M`;
+  } else {
+    return `Rp ${value.toLocaleString('id-ID')}`;
   }
-  return `Rp ${amount.toLocaleString('id-ID')}`;
 };
 
 // Format large numbers
@@ -203,6 +202,29 @@ const EnhancedStatsCards: React.FC<EnhancedStatsCardsProps> = ({ stats, loading 
           </div>
         );
       })}
+
+      {/* Total Nilai Qurban Card */}
+      <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
+        <div className="flex items-center justify-between mb-4">
+          <div className="bg-white/20 rounded-lg p-3">
+            <DollarSign className="w-6 h-6" />
+          </div>
+          <div className="text-right">
+            <div className="text-sm opacity-90">Total Nilai Qurban</div>
+            <div className="text-2xl font-bold">
+              {loading ? (
+                <div className="h-8 bg-white/20 rounded animate-pulse"></div>
+              ) : (
+                formatCurrency(stats.total_nilai_qurban)
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-sm opacity-90">
+          <span>Terkumpul dari {stats.total_muzakki} muzakki</span>
+          <TrendingUp className="w-4 h-4" />
+        </div>
+      </div>
     </div>
   );
 };

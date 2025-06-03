@@ -32,19 +32,19 @@ const Upload = () => {
   const [uploader, setUploader] = useState<Uploader | null>(null);
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
+  
   // Upload state
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-
+  
   // Login handler
   const handleLogin = async (uploadKey: string) => {
     setIsLoggingIn(true);
     setLoginError('');
-
+    
     try {
       const uploaderData = await authenticateUploader(uploadKey);
-      
+        
       if (uploaderData) {
         setIsAuthenticated(true);
         setUploader(uploaderData);
@@ -105,7 +105,7 @@ const Upload = () => {
       const extension = file.name.toLowerCase().split('.').pop();
       return extension === 'csv' || extension === 'xlsx';
     });
-
+      
     const newUploads: UploadFile[] = validFiles.map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       file,
@@ -116,7 +116,7 @@ const Upload = () => {
 
     setUploadFiles(prev => [...prev, ...newUploads]);
   };
-
+    
   // CSV Parser
   const parseCSV = (text: string): any[] => {
     const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -145,7 +145,7 @@ const Upload = () => {
       updateUploadStatus(upload.id, 'error', 'Invalid file type or uploader');
       return;
     }
-
+    
     updateUploadStatus(upload.id, 'uploading', undefined, 10);
 
     try {
@@ -163,8 +163,8 @@ const Upload = () => {
       const records = parseCSV(text);
       if (records.length === 0) {
         updateUploadStatus(upload.id, 'error', 'No valid records found in file');
-        return;
-      }
+      return;
+    }
 
       updateUploadStatus(upload.id, 'uploading', undefined, 50);
 
@@ -228,7 +228,7 @@ const Upload = () => {
         duplicates: result.duplicates,
         errors: result.errors.map(e => e.message || 'Unknown error')
       });
-
+      
     } catch (error) {
       console.error('Upload error:', error);
       updateUploadStatus(upload.id, 'error', 
@@ -236,7 +236,7 @@ const Upload = () => {
       );
     }
   };
-
+    
   // Update upload status helper
   const updateUploadStatus = (
     id: string, 
@@ -409,22 +409,22 @@ const Upload = () => {
         {/* Format Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
           <div className="flex items-center space-x-3 mb-3">
-            <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+              <FileSpreadsheet className="w-5 h-5 text-blue-600" />
             <h3 className="font-semibold text-blue-900">Format File CSV</h3>
-          </div>
+              </div>
           <div className="grid md:grid-cols-2 gap-6 text-sm">
-            <div>
+                <div>
               <h4 className="font-medium text-blue-900 mb-2">📊 Data Muzakki (Penyumbang)</h4>
               <p className="text-blue-700 mb-2">Nama file harus mengandung kata "muzakki"</p>
               <p className="text-blue-700">Kolom: nama_muzakki, email, telepon, alamat, provinsi, kabupaten, jenis_hewan, jumlah_hewan, nilai_qurban, tanggal_penyerahan</p>
-            </div>
-            <div>
+                </div>
+                <div>
               <h4 className="font-medium text-blue-900 mb-2">📦 Data Distribusi (Penerima)</h4>
               <p className="text-blue-700 mb-2">Nama file harus mengandung kata "distribusi"</p>
               <p className="text-blue-700">Kolom: nama_penerima, alamat_penerima, provinsi, kabupaten, jenis_hewan, jumlah_daging, tanggal_distribusi</p>
               <p className="text-blue-600 text-xs mt-1">* foto_distribusi_url, status, catatan bersifat opsional</p>
-            </div>
-          </div>
+                </div>
+              </div>
         </div>
 
         {/* Upload Area */}
@@ -571,12 +571,12 @@ const Upload = () => {
             
             {/* Bulk Actions */}
             <div className="mt-4 pt-4 border-t flex justify-between">
-              <button
-                onClick={() => setUploadFiles([])}
-                className="text-red-600 hover:text-red-800 text-sm"
-              >
-                Clear All
-              </button>
+                <button
+                  onClick={() => setUploadFiles([])}
+                  className="text-red-600 hover:text-red-800 text-sm"
+                >
+                  Clear All
+                </button>
               
               <button
                 onClick={() => {
@@ -623,7 +623,7 @@ const Upload = () => {
                 >
                   📥 Download Sample Distribusi.csv
                 </a>
-              </div>
+            </div>
             </div>
             
             <div>
@@ -638,10 +638,10 @@ const Upload = () => {
                 <li>• Provinsi dan kabupaten menggunakan nama lengkap</li>
                 <li>• Kolom opsional boleh dikosongkan</li>
               </ul>
+              </div>
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };

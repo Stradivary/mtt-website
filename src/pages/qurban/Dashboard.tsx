@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Users, MapPin, TrendingUp, Clock, RefreshCw, Filter, Calendar, Download } from 'lucide-react';
+import { ArrowLeft, Users, MapPin, TrendingUp, Clock, RefreshCw, Filter, Calendar, Download, Map, List, Search } from 'lucide-react';
 import EnhancedStatsCards from '../../components/qurban/EnhancedStatsCards';
-// TEMPORARILY DISABLED: InteractiveIndonesiaMap (react-simple-maps compatibility issue)
-// import InteractiveIndonesiaMap from '../../components/qurban/InteractiveIndonesiaMap';
+import ActivityFeed from '../../components/qurban/ActivityFeed';
+import SimpleIndonesiaMap from '../../components/qurban/SimpleIndonesiaMap';
 import SupabaseTest from '../../components/qurban/SupabaseTest';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
@@ -18,11 +18,16 @@ const Dashboard = () => {
     dateRange: 'last30days'
   });
   
+  const [distribusiData, setDistribusiData] = useState([]);
+  const [filteredDistribusi, setFilteredDistribusi] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const { 
     stats, 
     kabupatenData, 
     chartData, 
     recentActivities, 
+    advancedStats,
     loading, 
     error, 
     refreshData 
@@ -36,16 +41,76 @@ const Dashboard = () => {
     }
   }, [loading]);
 
+  // Fetch distribusi data for table
+  useEffect(() => {
+    fetchDistribusiData();
+  }, []);
+
+  const fetchDistribusiData = async () => {
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { data, error } = await supabase
+        .from('distribusi')
+        .select(`
+          id, nama_penerima, alamat_penerima, provinsi, kabupaten, 
+          jenis_hewan, jumlah_daging, tanggal_distribusi, status,
+          uploaders!inner(mitra_name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setDistribusiData(data);
+        setFilteredDistribusi(data);
+      }
+    } catch (err) {
+      console.error('Error fetching distribusi:', err);
+    }
+  };
+
+  // Filter distribusi data
+  useEffect(() => {
+    let filtered = distribusiData;
+    
+    if (filters.provinsi !== 'all') {
+      filtered = filtered.filter(item => item.provinsi === filters.provinsi);
+    }
+    
+    if (filters.mitra !== 'all') {
+      filtered = filtered.filter(item => {
+        const mitraMap = {
+          'bmm': 'BMM',
+          'lazismu': 'LAZIS_MUHAMMADIYAH', 
+          'lazisnu': 'LAZIS_NU',
+          'baznas': 'BAZNAS'
+        };
+        return item.uploaders.mitra_name === mitraMap[filters.mitra];
+      });
+    }
+    
+    if (searchTerm) {
+      filtered = filtered.filter(item => 
+        item.nama_penerima.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.alamat_penerima.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.kabupaten.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.provinsi.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    setFilteredDistribusi(filtered);
+  }, [distribusiData, filters, searchTerm]);
+
   const handleRefresh = () => {
     refreshData();
+    fetchDistribusiData();
   };
 
   const handleExportData = () => {
-    // Export functionality placeholder
     const exportData = {
       timestamp: new Date().toISOString(),
       stats: stats,
-      filters: filters
+      filters: filters,
+      advancedStats: advancedStats,
+      distribusi: filteredDistribusi
     };
     
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -183,10 +248,11 @@ const Dashboard = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="all">Semua Provinsi</option>
-                    <option value="dki">DKI Jakarta</option>
-                    <option value="jabar">Jawa Barat</option>
-                    <option value="jatim">Jawa Timur</option>
-                    <option value="jateng">Jawa Tengah</option>
+                    {chartData.provinsiBreakdown.slice(0, 5).map(provinsi => (
+                      <option key={provinsi.provinsi} value={provinsi.provinsi}>
+                        {provinsi.provinsi}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 
@@ -198,9 +264,10 @@ const Dashboard = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="all">Semua Mitra</option>
-                    <option value="lazis">LAZIS MTT</option>
+                    <option value="bmm">BMM</option>
+                    <option value="lazismu">LAZIS Muhammadiyah</option>
+                    <option value="lazisnu">LAZIS NU</option>
                     <option value="baznas">BAZNAS</option>
-                    <option value="mtt">MTT Pusat</option>
                   </select>
                 </div>
                 
@@ -234,66 +301,264 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Enhanced Statistics Cards */}
+        {/* 1. Enhanced Statistics Cards */}
         <div className="mb-8">
           <EnhancedStatsCards stats={stats} loading={loading} />
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Interactive Map */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                  <MapPin className="w-5 h-5 mr-2 text-blue-500" />
-                  Peta Distribusi Indonesia (Interactive)
-                </h2>
-                <div className="text-sm text-gray-500">
-                  Fully interactive map dengan zoom & pan controls
+        {/* 2. Interactive Map Section */}
+        <div className="mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                <Map className="w-5 h-5 mr-2 text-blue-500" />
+                Peta Distribusi Indonesia
+              </h2>
+              <div className="text-sm text-gray-500">
+                {stats.kabupaten_coverage} Kabupaten • {chartData.provinsiBreakdown.length} Provinsi
+              </div>
+            </div>
+            
+            {/* Interactive Map with Indonesia Heatmap */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Map Visualization */}
+              <div className="lg:col-span-2">
+                <SimpleIndonesiaMap 
+                  data={chartData.provinsiBreakdown}
+                  totalPenerima={stats.total_penerima}
+                  kabupatenCoverage={stats.kabupaten_coverage}
+                />
+              </div>
+              
+              {/* Map Legend & Top Locations */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Provinsi</h3>
+                  <div className="space-y-3">
+                    {chartData.provinsiBreakdown.map((provinsi, index) => (
+                      <div key={provinsi.provinsi} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div 
+                            className="w-4 h-4 rounded"
+                            style={{ backgroundColor: provinsi.color }}
+                          ></div>
+                          <span className="font-medium text-gray-900">
+                            {provinsi.provinsi}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900">
+                            {provinsi.count}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {provinsi.percentage}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Top Information & Analytics */}
+        <div className="grid lg:grid-cols-3 gap-8 mb-8">
+          {/* Progress Analytics */}
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
+              Progress & Analytics
+            </h2>
+            
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {advancedStats.distribution_progress.toFixed(1)}%
+                </div>
+                <p className="text-sm text-gray-600">Progress Distribusi</p>
+                <div className="mt-2 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(advancedStats.distribution_progress, 100)}%` }}
+                  ></div>
                 </div>
               </div>
               
-              {/* Placeholder for InteractiveIndonesiaMap */}
-              <div className="h-[300px] bg-gray-200 rounded-lg"></div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {advancedStats.uploads_last_7_days}
+                </div>
+                <p className="text-sm text-gray-600">Upload 7 Hari Terakhir</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {advancedStats.active_mitras}
+                </div>
+                <p className="text-sm text-gray-600">Mitra Aktif</p>
+              </div>
+            </div>
+
+            {/* Top Kabupaten */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Kabupaten</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {chartData.topKabupaten.slice(0, 4).map((kabupaten, index) => (
+                  <div key={kabupaten.name} className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-900">{kabupaten.name}</span>
+                      <span className="text-sm text-gray-500">#{index + 1}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Penerima:</span>
+                        <span className="font-medium">{kabupaten.penerima}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Hewan:</span>
+                        <span className="font-medium">{kabupaten.hewan}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Right Column - Placeholder untuk Analytics */}
+          {/* Simplified Recent Activities */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-                Analytics Coming Soon
+                <Clock className="w-5 h-5 mr-2 text-blue-500" />
+                Aktivitas Terbaru
               </h2>
               
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-900 mb-2">📊 Charts & Analytics</h3>
-                  <p className="text-sm text-gray-600">
-                    Advanced analytics charts akan ditambahkan setelah database setup selesai.
-                  </p>
+              {recentActivities.length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">Belum ada aktivitas</p>
                 </div>
-                
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-900 mb-2">🔄 Recent Activities</h3>
-                  <p className="text-sm text-gray-600">
-                    Real-time activity feed dari upload dan distribusi data.
-                  </p>
+              ) : (
+                <div className="space-y-3">
+                  {recentActivities.slice(0, 5).map((activity) => (
+                    <div key={activity.id} className="border-l-4 border-blue-500 pl-4 py-2">
+                      <div className="text-sm font-medium text-gray-900">
+                        {activity.mitra}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {activity.type === 'upload' ? '📤 Upload' : '🎯 Distribusi'} • {' '}
+                        {new Date(activity.timestamp).toLocaleString('id-ID', { 
+                          month: 'short', 
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <h3 className="font-medium text-blue-900 mb-2">🚀 Next Steps</h3>
-                  <ol className="text-sm text-blue-700 space-y-1">
-                    <li>1. Setup database tables di Supabase</li>
-                    <li>2. Upload sample data</li>
-                    <li>3. Test dashboard dengan real data</li>
-                    <li>4. Add charts & analytics</li>
-                  </ol>
-                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Distribusi Table Section */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center">
+              <List className="w-5 h-5 mr-2 text-green-500" />
+              Data Distribusi Provinsi & Kabupaten
+            </h2>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Cari penerima, lokasi..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="text-sm text-gray-500">
+                {filteredDistribusi.length} dari {distribusiData.length} record
               </div>
             </div>
           </div>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Penerima
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Lokasi
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hewan & Daging
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tanggal
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Mitra
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredDistribusi.slice(0, 20).map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {item.nama_penerima}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate max-w-xs">
+                        {item.alamat_penerima}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{item.kabupaten}</div>
+                      <div className="text-sm text-gray-500">{item.provinsi}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{item.jenis_hewan}</div>
+                      <div className="text-sm text-gray-500">{item.jumlah_daging} kg</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(item.tanggal_distribusi).toLocaleDateString('id-ID')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {item.uploaders.mitra_name.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        item.status === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {item.status || 'Selesai'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {filteredDistribusi.length > 20 && (
+            <div className="mt-4 text-center">
+              <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                Load More ({filteredDistribusi.length - 20} records)
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
