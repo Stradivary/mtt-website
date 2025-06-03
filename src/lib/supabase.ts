@@ -106,21 +106,38 @@ export const saveMuzakkiData = async (records: Muzakki[]): Promise<{ success: nu
     // Process records one by one to handle duplicates
     for (const record of records) {
       try {
+        // Check if record already exists (nama + telepon combination)
+        const { data: existing, error: checkError } = await supabase
+          .from(TABLES.MUZAKKI)
+          .select('id')
+          .eq('nama_muzakki', record.nama_muzakki)
+          .eq('telepon', record.telepon || '')
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned, which is what we want
+          errors.push(checkError);
+          continue;
+        }
+
+        if (existing) {
+          // Record already exists - skip as duplicate
+          duplicateCount++;
+          console.log(`⚠️ Duplicate skipped: ${record.nama_muzakki} (${record.telepon})`);
+          continue;
+        }
+
+        // Record doesn't exist - insert it
         const { data, error } = await supabase
           .from(TABLES.MUZAKKI)
           .insert([record])
           .select();
 
         if (error) {
-          // Check if it's a duplicate constraint error
-          if (error.code === '23505' && error.message.includes('muzakki_nama_muzakki_telepon_key')) {
-            duplicateCount++;
-            console.log(`⚠️ Duplicate skipped: ${record.nama_muzakki} (${record.telepon})`);
-          } else {
-            errors.push(error);
-          }
+          errors.push(error);
         } else if (data && data.length > 0) {
           successCount++;
+          console.log(`✅ Inserted: ${record.nama_muzakki}`);
         }
       } catch (err) {
         errors.push(err);
@@ -143,21 +160,38 @@ export const saveDistribusiData = async (records: Distribusi[]): Promise<{ succe
     // Process records one by one to handle duplicates
     for (const record of records) {
       try {
+        // Check if record already exists (nama + alamat combination)
+        const { data: existing, error: checkError } = await supabase
+          .from(TABLES.DISTRIBUSI)
+          .select('id')
+          .eq('nama_penerima', record.nama_penerima)
+          .eq('alamat_penerima', record.alamat_penerima)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned, which is what we want
+          errors.push(checkError);
+          continue;
+        }
+
+        if (existing) {
+          // Record already exists - skip as duplicate
+          duplicateCount++;
+          console.log(`⚠️ Duplicate skipped: ${record.nama_penerima} (${record.alamat_penerima})`);
+          continue;
+        }
+
+        // Record doesn't exist - insert it
         const { data, error } = await supabase
           .from(TABLES.DISTRIBUSI)
           .insert([record])
           .select();
 
         if (error) {
-          // Check if it's a duplicate constraint error
-          if (error.code === '23505' && error.message.includes('distribusi_nama_penerima_alamat_penerima_key')) {
-            duplicateCount++;
-            console.log(`⚠️ Duplicate skipped: ${record.nama_penerima} (${record.alamat_penerima})`);
-          } else {
-            errors.push(error);
-          }
+          errors.push(error);
         } else if (data && data.length > 0) {
           successCount++;
+          console.log(`✅ Inserted: ${record.nama_penerima}`);
         }
       } catch (err) {
         errors.push(err);
