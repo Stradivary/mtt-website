@@ -28,9 +28,8 @@ const Home = () => {
       {/* Full Width Hero Section with Auto Slider */}
       <section
         ref={heroRef}
-        className="w-full bg-gray-50"
+        className="w-full"
       >
-        {/* Full Width Container - No horizontal padding */}
         <div className="w-full">
           <div
             className={`transition-all duration-1000 ${
@@ -45,10 +44,10 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Enhanced CTA Section - Mobile Optimized */}
-      <section className="py-12 sm:py-16 bg-gradient-to-br from-gray-50 to-white">
+      {/* Enhanced CTA Section - Mobile Optimized - No top margin */}
+      <section className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
+          <div className="text-center mb-6 sm:mb-8 lg:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Layanan Utama MTT
             </h2>
@@ -158,9 +157,9 @@ const Home = () => {
       </section>
 
       {/* Trusted Section - Mobile Optimized */}
-      <section className="py-12 sm:py-16 bg-white">
+      <section className="py-8 sm:py-12 lg:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
+          <div className="text-center mb-6 sm:mb-8 lg:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Trusted by partners and businesses globally
             </h2>
@@ -184,9 +183,9 @@ const Home = () => {
       </section>
 
       {/* Features Section - Mobile Enhanced */}
-      <section ref={featuresRef} className="py-12 sm:py-20 bg-gray-50">
+      <section ref={featuresRef} className="py-8 sm:py-12 lg:py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 sm:mb-16">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Berita terbaru dari MTT
             </h2>
@@ -237,7 +236,7 @@ const Home = () => {
               </div>
             ))}
           </div>
-          <div className="text-center mt-8 sm:mt-12">
+          <div className="text-center mt-6 sm:mt-8 lg:mt-12">
             <Link
               to="/articles"
               className="inline-flex items-center bg-white text-green-600 border-2 border-green-600 hover:bg-green-600 hover:text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-semibold transition-all duration-300 text-sm sm:text-base touch-manipulation"
@@ -250,7 +249,7 @@ const Home = () => {
       </section>
 
       {/* Enhanced CTA Section - Mobile Focused */}
-      <section className="py-12 sm:py-20 bg-gradient-to-r from-green-600 to-emerald-700 relative overflow-hidden">
+      <section className="py-8 sm:py-12 lg:py-20 bg-gradient-to-r from-green-600 to-emerald-700 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -260,10 +259,10 @@ const Home = () => {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 lg:mb-6">
               Ready to Get Started?
             </h2>
-            <p className="text-lg sm:text-xl text-white/90 mb-6 sm:mb-8 px-2">
+            <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-6 sm:mb-8 px-2">
               Bergabunglah dengan keluarga besar MTT dan nikmati berbagai layanan untuk Tflyers
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
