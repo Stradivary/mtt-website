@@ -8,6 +8,7 @@ import Contact from "./pages/Contact";
 import Service from "./pages/Service";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import FloatingActionButton from "./components/FloatingActionButton";
 
 // New Qurban Components
 import QurbanService from "./pages/qurban/QurbanService";
@@ -34,6 +35,7 @@ function App() {
           </Routes>
         </main>
         <Footer />
+        <FloatingActionButton />
       </div>
     </Router>
   );
