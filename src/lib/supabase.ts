@@ -8,8 +8,55 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Create Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create Supabase client with cache control
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  },
+  // Disable automatic retries to get fresh errors instead of cached responses
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Cache-busting utility function
+export const createQueryWithCacheBuster = (query: any) => {
+  const timestamp = Date.now();
+  console.log(`🔄 Query with cache buster: ${timestamp}`);
+  
+  // Add cache-busting order by to force new query plan
+  return query.order('id', { ascending: false });
+};
+
+// Fresh data retrieval wrapper
+export const fetchFreshData = async (tableName: string, selectQuery: string = '*', limit?: number) => {
+  console.log(`🔄 Fetching fresh data from ${tableName}`);
+  
+  let query = supabase
+    .from(tableName)
+    .select(selectQuery)
+    .order('created_at', { ascending: false }); // Force chronological order
+    
+  if (limit) {
+    query = query.limit(limit);
+  }
+  
+  const result = await query;
+  
+  if (result.error) {
+    console.error(`❌ Error fetching from ${tableName}:`, result.error);
+  } else {
+    console.log(`✅ Fresh data retrieved from ${tableName}: ${result.data?.length || 0} records`);
+  }
+  
+  return result;
+};
 
 // Table names for the system
 export const TABLES = {

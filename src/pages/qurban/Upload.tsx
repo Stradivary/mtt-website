@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Upload as UploadIcon, FileSpreadsheet, CheckCircle, X, Loader2, AlertCircle } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { 
   authenticateUploader, 
   saveMuzakkiData, 
@@ -117,26 +118,168 @@ const Upload = () => {
     setUploadFiles(prev => [...prev, ...newUploads]);
   };
     
-  // CSV Parser
+  // Advanced CSV Parser - Handles commas within data fields
   const parseCSV = (text: string): any[] => {
     const lines = text.split('\n').filter(line => line.trim() !== '');
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(',').map(h => h.trim());
+    console.log(`📝 CSV parsing started: ${lines.length} total lines`);
+    
+    // Parse CSV line properly handling quoted fields and commas within data
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      let i = 0;
+      
+      while (i < line.length) {
+        const char = line[i];
+        
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            // Escaped quote
+            current += '"';
+            i += 2;
+          } else {
+            // Toggle quote state
+            inQuotes = !inQuotes;
+            i++;
+          }
+        } else if (char === ',' && !inQuotes) {
+          // Field separator (only when not in quotes)
+          result.push(current.trim());
+          current = '';
+          i++;
+        } else {
+          current += char;
+          i++;
+        }
+      }
+      
+      // Add the last field
+      result.push(current.trim());
+      return result;
+    };
+    
+    // Parse headers
+    const headers = parseCSVLine(lines[0]).map(h => h.trim());
+    console.log('📊 CSV headers detected:', headers);
+    
     const records: any[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      if (values.length === headers.length) {
-        const record: any = {};
-        headers.forEach((header, index) => {
-          record[header] = values[index] || null;
-        });
+      const line = lines[i].trim();
+      
+      // Skip empty lines
+      if (!line) {
+        console.log(`⚠️ Skipping empty line ${i + 1}`);
+        continue;
+      }
+      
+      // Parse the CSV line properly
+      const values = parseCSVLine(line);
+      
+      // Skip lines with no meaningful data
+      if (values.length === 0 || (values.length === 1 && values[0] === '')) {
+        console.log(`⚠️ Skipping line ${i + 1} - no data`);
+        continue;
+      }
+      
+      const record: any = {};
+      
+      // Map values to headers, handling different column counts
+      headers.forEach((header, index) => {
+        const value = index < values.length ? values[index] : null;
+        record[header] = value !== null && value !== undefined && value !== '' ? value : null;
+      });
+      
+      // Only add record if it has at least one meaningful field (like nama_muzakki)
+      const hasRequiredData = record.nama_muzakki && record.nama_muzakki.trim() !== '';
+      
+      if (hasRequiredData) {
         records.push(record);
+        console.log(`✅ CSV processed row ${i + 1} (${values.length} fields):`, {
+          nama_muzakki: record.nama_muzakki,
+          email: record.email,
+          telepon: record.telepon,
+          alamat: record.alamat?.substring(0, 50) + (record.alamat?.length > 50 ? '...' : '')
+        });
+      } else {
+        console.log(`⚠️ Skipping row ${i + 1} - missing required data (nama_muzakki). Parsed ${values.length} fields:`, values.slice(0, 3));
       }
     }
-
+    
+    console.log(`📊 CSV parsing complete: ${records.length} valid records from ${lines.length - 1} total data rows`);
     return records;
+  };
+
+  // Excel Parser
+  const parseExcel = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          // Get the first worksheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            header: 1,
+            defval: null 
+          });
+          
+          if (jsonData.length < 2) {
+            resolve([]);
+            return;
+          }
+          
+          // Get headers from first row
+          const headers = (jsonData[0] as any[]).map(h => String(h || '').trim());
+          console.log('📊 Excel headers detected:', headers);
+          
+          // Convert rows to objects
+          const records: any[] = [];
+          for (let i = 1; i < jsonData.length; i++) {
+            const row = jsonData[i] as any[];
+            
+            // Skip empty rows
+            if (!row || row.every(cell => cell === null || cell === undefined || String(cell).trim() === '')) {
+              console.log(`⚠️ Skipping empty row ${i + 1}`);
+              continue;
+            }
+            
+            const record: any = {};
+            headers.forEach((header, index) => {
+              const value = row[index];
+              record[header] = value !== null && value !== undefined ? String(value).trim() : null;
+            });
+            
+            // Only add record if it has at least one non-empty field
+            const hasData = Object.values(record).some(value => value !== null && value !== '');
+            if (hasData) {
+              records.push(record);
+              console.log(`✅ Processed row ${i + 1}:`, record);
+            } else {
+              console.log(`⚠️ Skipping row ${i + 1} - no data`);
+            }
+          }
+          
+          console.log(`📊 Excel parsing complete: ${records.length} valid records from ${jsonData.length - 1} total rows`);
+          resolve(records);
+        } catch (error) {
+          console.error('Error parsing Excel:', error);
+          reject(new Error('Failed to parse Excel file: ' + (error instanceof Error ? error.message : 'Unknown error')));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
   };
 
   // Process single file upload
@@ -149,65 +292,159 @@ const Upload = () => {
     updateUploadStatus(upload.id, 'uploading', undefined, 10);
 
     try {
-      // Read file
-      const text = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsText(upload.file);
-      });
+      console.log(`📁 Processing file: ${upload.file.name} (${upload.file.size} bytes)`);
+      
+      let records: any[] = [];
+      
+      // Check file extension to determine parsing method
+      const fileExtension = upload.file.name.toLowerCase().split('.').pop();
+      
+      if (fileExtension === 'xlsx') {
+        console.log('📊 Parsing Excel file...');
+        records = await parseExcel(upload.file);
+      } else if (fileExtension === 'csv') {
+        console.log('📝 Parsing CSV file...');
+        // Read file as text for CSV
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = () => reject(new Error('Failed to read CSV file'));
+          reader.readAsText(upload.file);
+        });
+        
+        // First attempt with advanced CSV parser
+        records = parseCSV(text);
+        
+        // If we get very few records compared to the total lines, try alternative approach
+        const totalLines = text.split('\n').filter(line => line.trim() !== '').length - 1; // minus header
+        const successRate = records.length / totalLines;
+        
+        if (successRate < 0.7 && totalLines > 10) {
+          console.log(`⚠️ Low success rate (${(successRate * 100).toFixed(1)}%). Trying alternative CSV parsing...`);
+          
+          // Alternative approach: try to guess the correct number of columns and split more intelligently
+          const lines = text.split('\n').filter(line => line.trim() !== '');
+          const headers = parseCSVLine(lines[0]);
+          const expectedColumns = headers.length;
+          
+          console.log(`📊 Expected ${expectedColumns} columns. Attempting intelligent split...`);
+          
+          const alternativeRecords: any[] = [];
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            // Try to split intelligently - if we get too many fields, try to merge some
+            let fields = parseCSVLine(line);
+            
+            // If we have more fields than expected, try to merge excess fields into the last field (usually alamat)
+            if (fields.length > expectedColumns) {
+              const excess = fields.length - expectedColumns;
+              console.log(`🔧 Row ${i + 1}: Merging ${excess} excess fields`);
+              
+              // Merge excess fields into the alamat field (usually the last text field before numbers)
+              const mergedFields = fields.slice(0, expectedColumns - 1);
+              const excessFields = fields.slice(expectedColumns - 1);
+              mergedFields.push(excessFields.join(', '));
+              fields = mergedFields;
+            }
+            
+            // Create record
+            const record: any = {};
+            headers.forEach((header, index) => {
+              const value = index < fields.length ? fields[index] : null;
+              record[header] = value !== null && value !== undefined && value !== '' ? value : null;
+            });
+            
+            if (record.nama_muzakki && record.nama_muzakki.trim() !== '') {
+              alternativeRecords.push(record);
+              console.log(`✅ Alternative parsing row ${i + 1}: ${record.nama_muzakki}`);
+            }
+          }
+          
+          console.log(`📊 Alternative parsing result: ${alternativeRecords.length} records vs ${records.length} from standard parsing`);
+          
+          // Use alternative result if it's significantly better
+          if (alternativeRecords.length > records.length * 1.5) {
+            console.log('✅ Using alternative parsing results');
+            records = alternativeRecords;
+          }
+        }
+      } else {
+        throw new Error('Unsupported file format. Please use .csv or .xlsx files.');
+      }
 
       updateUploadStatus(upload.id, 'uploading', undefined, 30);
 
-      // Parse CSV
-      const records = parseCSV(text);
+      console.log(`📊 Parsed ${records.length} records from ${upload.file.name}`);
+
       if (records.length === 0) {
-        updateUploadStatus(upload.id, 'error', 'No valid records found in file');
-      return;
-    }
+        updateUploadStatus(upload.id, 'error', 'No valid records found in file. Please check the file format and content.');
+        return;
+      }
 
       updateUploadStatus(upload.id, 'uploading', undefined, 50);
 
       // Prepare data for database
-      let result: { success: number; errors: any[] };
+      let result: { success: number; duplicates: number; errors: any[] };
       
       if (upload.type === 'muzakki') {
-        const muzakkiRecords: Muzakki[] = records.map(record => ({
-          uploader_id: uploader.id,
-          nama_muzakki: record.nama_muzakki || '',
-          email: record.email || null,
-          telepon: record.telepon || null,
-          alamat: record.alamat || null,
-          provinsi: record.provinsi || null,
-          kabupaten: record.kabupaten || null,
-          jenis_hewan: record.jenis_hewan as 'Sapi' | 'Kambing' | 'Domba',
-          jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
-          nilai_qurban: parseFloat(record.nilai_qurban) || 0,
-          tanggal_penyerahan: record.tanggal_penyerahan || null
-        }));
+        console.log('🎯 Processing muzakki records...');
+        const muzakkiRecords: Muzakki[] = records.map((record, index) => {
+          // Validate required fields
+          if (!record.nama_muzakki || record.nama_muzakki.trim() === '') {
+            console.warn(`⚠️ Row ${index + 2}: Missing nama_muzakki`);
+          }
+          
+          return {
+            uploader_id: uploader.id,
+            nama_muzakki: record.nama_muzakki || '',
+            email: record.email || null,
+            telepon: record.telepon || null,
+            alamat: record.alamat || null,
+            provinsi: record.provinsi || null,
+            kabupaten: record.kabupaten || null,
+            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba') || 'Sapi',
+            jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
+            nilai_qurban: parseFloat(record.nilai_qurban) || 0,
+            tanggal_penyerahan: record.tanggal_penyerahan || null
+          };
+        });
 
+        console.log(`📊 Prepared ${muzakkiRecords.length} muzakki records for database insertion`);
         updateUploadStatus(upload.id, 'uploading', undefined, 70);
         result = await saveMuzakkiData(muzakkiRecords);
       } else {
-        const distribusiRecords: Distribusi[] = records.map(record => ({
-          uploader_id: uploader.id,
-          nama_penerima: record.nama_penerima || '',
-          alamat_penerima: record.alamat_penerima || '',
-          provinsi: record.provinsi || null,
-          kabupaten: record.kabupaten || null,
-          jenis_hewan: record.jenis_hewan as 'Sapi' | 'Kambing' | 'Domba',
-          jumlah_daging: parseFloat(record.jumlah_daging) || null,
-          tanggal_distribusi: record.tanggal_distribusi || '',
-          foto_distribusi_url: record.foto_distribusi_url || null,
-          status: record.status || 'Selesai',
-          catatan: record.catatan || null
-        }));
+        console.log('🎯 Processing distribusi records...');
+        const distribusiRecords: Distribusi[] = records.map((record, index) => {
+          // Validate required fields
+          if (!record.nama_penerima || record.nama_penerima.trim() === '') {
+            console.warn(`⚠️ Row ${index + 2}: Missing nama_penerima`);
+          }
+          
+          return {
+            uploader_id: uploader.id,
+            nama_penerima: record.nama_penerima || '',
+            alamat_penerima: record.alamat_penerima || '',
+            provinsi: record.provinsi || null,
+            kabupaten: record.kabupaten || null,
+            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba') || 'Sapi',
+            jumlah_daging: parseFloat(record.jumlah_daging) || null,
+            tanggal_distribusi: record.tanggal_distribusi || '',
+            foto_distribusi_url: record.foto_distribusi_url || null,
+            status: record.status || 'Selesai',
+            catatan: record.catatan || null
+          };
+        });
 
+        console.log(`📊 Prepared ${distribusiRecords.length} distribusi records for database insertion`);
         updateUploadStatus(upload.id, 'uploading', undefined, 70);
         result = await saveDistribusiData(distribusiRecords);
       }
 
       updateUploadStatus(upload.id, 'uploading', undefined, 90);
+
+      console.log(`💾 Database operation complete: ${result.success} success, ${result.duplicates} duplicates, ${result.errors.length} errors`);
 
       // Save upload history
       await saveUploadHistory({
@@ -228,6 +465,8 @@ const Upload = () => {
         duplicates: result.duplicates,
         errors: result.errors.map(e => e.message || 'Unknown error')
       });
+      
+      console.log(`✅ Upload complete for ${upload.file.name}: ${result.success}/${records.length} records processed`);
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -410,17 +649,19 @@ const Upload = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
           <div className="flex items-center space-x-3 mb-3">
               <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900">Format File CSV</h3>
+            <h3 className="font-semibold text-blue-900">Format File CSV & Excel</h3>
               </div>
           <div className="grid md:grid-cols-2 gap-6 text-sm">
                 <div>
               <h4 className="font-medium text-blue-900 mb-2">📊 Data Muzakki (Penyumbang)</h4>
               <p className="text-blue-700 mb-2">Nama file harus mengandung kata "muzakki"</p>
+              <p className="text-blue-700 mb-2">Format: .csv atau .xlsx (Excel)</p>
               <p className="text-blue-700">Kolom: nama_muzakki, email, telepon, alamat, provinsi, kabupaten, jenis_hewan, jumlah_hewan, nilai_qurban, tanggal_penyerahan</p>
                 </div>
                 <div>
               <h4 className="font-medium text-blue-900 mb-2">📦 Data Distribusi (Penerima)</h4>
               <p className="text-blue-700 mb-2">Nama file harus mengandung kata "distribusi"</p>
+              <p className="text-blue-700 mb-2">Format: .csv atau .xlsx (Excel)</p>
               <p className="text-blue-700">Kolom: nama_penerima, alamat_penerima, provinsi, kabupaten, jenis_hewan, jumlah_daging, tanggal_distribusi</p>
               <p className="text-blue-600 text-xs mt-1">* foto_distribusi_url, status, catatan bersifat opsional</p>
                 </div>
@@ -466,7 +707,7 @@ const Upload = () => {
               </span>
             </label>
             <p className="text-sm text-gray-500 mt-2">
-              File CSV/Excel maksimal 10MB
+              File CSV/Excel maksimal 10MB. Mendukung format .csv dan .xlsx
             </p>
           </div>
         </div>
@@ -546,22 +787,39 @@ const Upload = () => {
                     </div>
                   )}
                   
-                  {/* Success Result */}
-                  {upload.result && upload.status === 'completed' && (
-                    <div className="mt-2 p-3 bg-green-50 rounded text-sm">
-                      <div className="font-medium text-green-800 mb-1">✅ Upload Berhasil</div>
-                      <div className="text-green-700">
-                        📊 {upload.result.success} dari {upload.result.total} record berhasil disimpan
-                        {upload.result.duplicates > 0 && (
-                          <div className="mt-1 text-orange-600">
-                            🔄 {upload.result.duplicates} data duplikat dilewati
-                          </div>
-                        )}
-                        {upload.result.errors.length > 0 && (
-                          <div className="mt-1 text-red-600">
-                            ⚠️ {upload.result.errors.length} error
-                          </div>
-                        )}
+                  {/* Upload Result */}
+                  {upload.result && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-700">Upload Berhasil</span>
+                        <span className="text-green-600 font-bold">
+                          {upload.result.success} dari {upload.result.total} record
+                        </span>
+                      </div>
+                      
+                      {upload.result.success > 0 && (
+                        <div className="flex items-center text-green-600 mb-1">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <span>{upload.result.success} record berhasil disimpan</span>
+                        </div>
+                      )}
+                      
+                      {upload.result.duplicates > 0 && (
+                        <div className="flex items-center text-orange-600 mb-1">
+                          <AlertCircle className="w-4 h-4 mr-2" />
+                          <span>{upload.result.duplicates} record duplikat dilewati</span>
+                        </div>
+                      )}
+                      
+                      {upload.result.errors.length > 0 && (
+                        <div className="flex items-center text-red-600 mb-1">
+                          <X className="w-4 h-4 mr-2" />
+                          <span>{upload.result.errors.length} record gagal diproses</span>
+                        </div>
+                      )}
+                      
+                      <div className="mt-2 text-xs text-gray-500">
+                        File: {upload.file.name} ({(upload.file.size / 1024).toFixed(1)} KB)
                       </div>
                     </div>
                   )}

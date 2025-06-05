@@ -6,12 +6,14 @@ import IndonesiaMap from '../../components/qurban/IndonesiaMap';
 import DistributionTable from '../../components/qurban/DistributionTable';
 import ActivityFeed from '../../components/qurban/ActivityFeed';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { clearAllCaches, markCacheCleared } from '../../utils/cacheUtils';
 
 const Dashboard = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [animalBreakdown, setAnimalBreakdown] = useState<Record<string, number>>({});
+  const [debugMode, setDebugMode] = useState(false); // Debug mode toggle
   
   const { 
     stats, 
@@ -19,7 +21,8 @@ const Dashboard = () => {
     recentActivities, 
     loading, 
     error, 
-    refreshData 
+    refreshData,
+    lastFetchTime // Get last fetch time for debugging
   } = useDashboardData(autoRefresh);
 
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -30,23 +33,30 @@ const Dashboard = () => {
     }
   }, [loading]);
 
-  // Fetch real animal breakdown data
+  // Fetch real animal breakdown data with cache-busting
   useEffect(() => {
     fetchAnimalBreakdown();
   }, [refreshTrigger]);
 
   const fetchAnimalBreakdown = async () => {
     try {
+      console.log('🐄 Fetching animal breakdown...');
       const { supabase } = await import('../../lib/supabase');
+      
+      // Add cache-busting to animal breakdown query
       const { data: muzakki } = await supabase
         .from('muzakki')
-        .select('jenis_hewan');
+        .select('jenis_hewan')
+        .order('created_at', { ascending: false }) // Force fresh query
+        .limit(10000);
 
       if (muzakki) {
         const breakdown = muzakki.reduce((acc, item) => {
           acc[item.jenis_hewan] = (acc[item.jenis_hewan] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
+        
+        console.log('✅ Animal breakdown updated:', breakdown);
         setAnimalBreakdown(breakdown);
       }
     } catch (error) {
@@ -55,17 +65,43 @@ const Dashboard = () => {
   };
 
   const handleRefresh = () => {
+    console.log('🔄 Manual refresh initiated from Dashboard');
     refreshData();
     setRefreshTrigger(prev => prev + 1);
     fetchAnimalBreakdown();
   };
 
+  const handleHardRefresh = async () => {
+    console.log('💪 HARD REFRESH initiated - clearing all caches');
+    
+    try {
+      // Use utility function to clear all caches
+      await clearAllCaches();
+      
+      // Mark that cache was cleared
+      markCacheCleared();
+      
+      // Force refresh data
+      handleRefresh();
+      
+      // Show notification
+      alert('Cache cleared! Data will be refreshed from the database.');
+    } catch (error) {
+      console.error('Error clearing caches:', error);
+      alert('Cache clearing encountered an issue, but data will still be refreshed.');
+      handleRefresh();
+    }
+  };
+
   const handleExportData = () => {
     const exportData = {
       timestamp: new Date().toISOString(),
+      lastFetchTime: lastFetchTime,
+      lastUpdate: lastUpdate.toISOString(),
       stats: stats,
       animalBreakdown: animalBreakdown,
-      chartData: chartData
+      chartData: chartData,
+      recentActivities: recentActivities
     };
     
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -75,6 +111,45 @@ const Dashboard = () => {
     link.href = url;
     link.download = `qurban-dashboard-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
+  };
+
+  // Debug info component
+  const DebugInfo = () => {
+    if (!debugMode) return null;
+    
+    return (
+      <div className="mb-4 p-4 bg-gray-100 rounded-lg text-sm">
+        <h3 className="font-bold mb-2">🐛 Debug Information</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div><strong>Last Fetch:</strong> {new Date(lastFetchTime).toLocaleString()}</div>
+          <div><strong>Last Update:</strong> {lastUpdate.toLocaleString()}</div>
+          <div><strong>Auto Refresh:</strong> {autoRefresh ? 'ON' : 'OFF'}</div>
+          <div><strong>Loading:</strong> {loading ? 'YES' : 'NO'}</div>
+          <div><strong>Error:</strong> {error || 'None'}</div>
+          <div><strong>Stats:</strong> {Object.values(stats).some(v => v > 0) ? 'Valid' : 'Empty'}</div>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            onClick={handleHardRefresh}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+          >
+            🔥 Hard Refresh
+          </button>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs"
+          >
+            🔄 Page Reload
+          </button>
+          <button
+            onClick={() => console.log({ stats, chartData, animalBreakdown, recentActivities })}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
+          >
+            📊 Log Data
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (error) {
@@ -120,26 +195,38 @@ const Dashboard = () => {
             
             {/* Control Section - Mobile Responsive */}
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="text-xs sm:text-sm text-gray-500 flex items-center justify-center sm:justify-start">
-                <Clock className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 flex-shrink-0" />
-                <span>Update: {lastUpdate.toLocaleTimeString('id-ID')}</span>
-              </div>
-              
-              {/* Auto-refresh Toggle */}
-              <div className="flex items-center justify-center space-x-2">
-                <label className="text-xs sm:text-sm text-gray-600">Auto-refresh</label>
+              <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm text-gray-500">
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Update: {lastUpdate.toLocaleTimeString('id-ID')}</span>
+                </div>
+                
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-400' : 'bg-green-400'}`}></div>
+                  <span>{loading ? 'Loading...' : error ? 'Error' : 'Live'}</span>
+                </div>
+
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={`w-8 h-4 rounded-full transition-colors touch-manipulation ${
-                    autoRefresh ? 'bg-green-500' : 'bg-gray-300'
+                  className={`px-2 py-1 rounded-full text-xs transition-colors touch-manipulation ${
+                    autoRefresh 
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  <div className={`w-3 h-3 bg-white rounded-full transition-transform ${
-                    autoRefresh ? 'translate-x-4' : 'translate-x-0.5'
-                  }`} />
+                  Auto: {autoRefresh ? 'ON' : 'OFF'}
+                </button>
+
+                {/* Debug toggle */}
+                <button
+                  onClick={() => setDebugMode(!debugMode)}
+                  className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors touch-manipulation"
+                  title="Toggle debug mode"
+                >
+                  🐛
                 </button>
               </div>
-
+              
               {/* Action Buttons - Mobile Responsive */}
               <div className="flex items-center justify-center space-x-2 sm:space-x-3">
                 <button
@@ -158,6 +245,15 @@ const Dashboard = () => {
                   <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
                 </button>
+
+                <button
+                  onClick={handleHardRefresh}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
+                  title="Clear cache and force refresh"
+                >
+                  <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Hard</span>
+                </button>
               </div>
             </div>
           </div>
@@ -171,6 +267,9 @@ const Dashboard = () => {
             </p>
           </div>
         </div>
+
+        {/* Debug Information */}
+        <DebugInfo />
 
         {/* 1. Statistics Cards */}
         <div className="mb-6 sm:mb-8">

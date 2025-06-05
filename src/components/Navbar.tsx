@@ -90,26 +90,33 @@ const Navbar = () => {
                 ))}
               </div>
               
-              {/* Quick Actions Section for Mobile */}
+              {/* Quick Actions Section for Mobile - Updated */}
               <div className="border-t border-gray-100 px-4 py-4">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   Quick Access
                 </div>
                 <div className="space-y-2">
                   <Link
-                    to="/service/qurban/pendaftaran"
+                    to="/service/qurban/dashboard"
                     className="flex items-center justify-center bg-green-600 text-white px-4 py-3 rounded-full font-semibold hover:bg-green-700 transition-all duration-300 shadow-md touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    🕌 Daftar Qurban
+                    📊 Dashboard Qurban
                   </Link>
                   <Link
                     to="/service/qurban/dashboard"
                     className="flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-full font-semibold hover:bg-blue-700 transition-all duration-300 shadow-md touch-manipulation"
                     onClick={() => setIsOpen(false)}
                   >
-                    📊 Lihat Dashboard
+                    🗺️ Pantau Distribusi
                   </Link>
+                </div>
+                
+                {/* Registration closed notice */}
+                <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-800 text-center">
+                    Program Qurban 1446H - Pendaftaran Ditutup
+                  </p>
                 </div>
               </div>
             </div>

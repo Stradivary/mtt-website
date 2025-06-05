@@ -18,9 +18,9 @@ const HeaderSlider: React.FC<HeaderSliderProps> = ({ className = '' }) => {
       image: '/assets/images/header_qurban.png',
       title: 'Qurban Bersama MTT 1446H',
       subtitle: 'Program Qurban Amanah & Transparan untuk Ummat',
-      description: 'Bergabunglah dengan program qurban Majelis Telkomsel Taqwa. Disalurkan dengan amanah dan tepat sasaran.',
-      buttonText: 'Daftar Qurban',
-      buttonLink: '/service/qurban/pendaftaran',
+      description: 'Pantau perkembangan distribusi qurban Majelis Telkomsel Taqwa secara real-time dengan data lengkap dan transparan.',
+      buttonText: 'Lihat Dashboard',
+      buttonLink: '/service/qurban/dashboard',
       bgGradient: 'from-green-600 to-emerald-700',
       featured: true // Mark as featured/primary
     },

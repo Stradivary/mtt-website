@@ -54,43 +54,25 @@ const Home = () => {
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-2">
               Portal terpadu untuk semua kebutuhan layanan Majelis Telkomsel Taqwa
             </p>
+            
+            {/* Registration closed notice */}
+            <div className="mt-6 mx-auto max-w-2xl bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
+              <div className="flex items-center justify-center">
+                <div className="flex-shrink-0">
+                  <span className="text-xl sm:text-2xl">📢</span>
+                </div>
+                <div className="ml-3">
+                  <p className="text-xs sm:text-sm text-amber-800">
+                    <strong>Program Qurban 1446H - Pendaftaran Ditutup.</strong> Pantau distribusi qurban melalui dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
-            {/* Program Qurban Card - Mobile Enhanced */}
+            {/* Dashboard Qurban Card - Primary Card */}
             <div className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95">
-              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-              <div className="relative p-6 sm:p-8 text-white">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                    <span className="text-2xl sm:text-3xl">🕌</span>
-                  </div>
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center">
-                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
-                </div>
-                
-                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Program Qurban</h3>
-                <p className="text-white/90 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
-                  Qurban amanah & transparan bersama MTT. Disalurkan dengan sistem yang terpercaya dan tepat sasaran.
-                </p>
-                
-                <Link
-                  to="/service/qurban/pendaftaran"
-                  className="inline-flex items-center bg-white text-green-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg text-sm sm:text-base touch-manipulation"
-                >
-                  Daftar Sekarang
-                  <ArrowRight className="ml-2 w-3 h-3 sm:w-4 sm:h-4" />
-                </Link>
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -right-4 w-16 h-16 sm:w-24 sm:h-24 bg-white/10 rounded-full"></div>
-              <div className="absolute -bottom-6 -left-6 w-20 h-20 sm:w-32 sm:h-32 bg-white/5 rounded-full"></div>
-            </div>
-
-            {/* Dashboard Card - Mobile Enhanced */}
-            <div className="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95">
               <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
               <div className="relative p-6 sm:p-8 text-white">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
@@ -102,16 +84,48 @@ const Home = () => {
                   </div>
                 </div>
                 
-                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Dashboard</h3>
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Dashboard Qurban 1446H</h3>
                 <p className="text-white/90 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
-                  Monitoring distribusi real-time dengan peta interaktif dan analisis data lengkap.
+                  Pantau distribusi qurban MTT secara real-time dengan peta interaktif dan data lengkap yang transparan.
+                </p>
+                
+                <Link
+                  to="/service/qurban/dashboard"
+                  className="inline-flex items-center bg-white text-green-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg text-sm sm:text-base touch-manipulation"
+                >
+                  Lihat Dashboard
+                  <ArrowRight className="ml-2 w-3 h-3 sm:w-4 sm:h-4" />
+                </Link>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -top-4 -right-4 w-16 h-16 sm:w-24 sm:h-24 bg-white/10 rounded-full"></div>
+              <div className="absolute -bottom-6 -left-6 w-20 h-20 sm:w-32 sm:h-32 bg-white/5 rounded-full"></div>
+            </div>
+
+            {/* Data Qurban Card - Secondary Card */}
+            <div className="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95">
+              <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+              <div className="relative p-6 sm:p-8 text-white">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                    <span className="text-2xl sm:text-3xl">🗺️</span>
+                  </div>
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
+                
+                <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Monitoring Distribusi</h3>
+                <p className="text-white/90 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
+                  Lihat peta interaktif distribusi qurban ke seluruh Indonesia dengan detail lengkap per wilayah.
                 </p>
                 
                 <Link
                   to="/service/qurban/dashboard"
                   className="inline-flex items-center bg-white text-blue-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg text-sm sm:text-base touch-manipulation"
                 >
-                  Lihat Dashboard
+                  Lihat Peta
                   <ArrowRight className="ml-2 w-3 h-3 sm:w-4 sm:h-4" />
                 </Link>
               </div>
@@ -248,7 +262,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Enhanced CTA Section - Mobile Focused */}
+      {/* Enhanced CTA Section - Updated for Post-Registration */}
       <section className="py-8 sm:py-12 lg:py-20 bg-gradient-to-r from-green-600 to-emerald-700 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
@@ -260,18 +274,18 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 lg:mb-6">
-              Ready to Get Started?
+              Lihat Perkembangan Program Qurban
             </h2>
             <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-6 sm:mb-8 px-2">
-              Bergabunglah dengan keluarga besar MTT dan nikmati berbagai layanan untuk Tflyers
+              Pantau distribusi qurban MTT dan lihat dampak program untuk umat melalui dashboard interaktif
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
               <Link
-                to="/service/qurban/pendaftaran"
+                to="/service/qurban/dashboard"
                 className="inline-flex items-center justify-center bg-white text-green-600 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base touch-manipulation"
               >
-                Daftar Qurban
-                <span className="ml-2">🕌</span>
+                Lihat Dashboard
+                <span className="ml-2">📊</span>
               </Link>
               <Link
                 to="/contact"

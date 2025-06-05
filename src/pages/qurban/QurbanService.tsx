@@ -5,20 +5,23 @@ import { Users, BarChart3, Upload, ArrowRight } from 'lucide-react';
 const QurbanService = () => {
   const services = [
     {
-      title: 'Pendaftaran Qurban',
-      description: 'Daftarkan qurban Anda untuk tahun ini dengan mudah dan cepat',
-      icon: Users,
-      link: '/service/qurban/pendaftaran',
-      color: 'from-green-500 to-green-600',
-      hoverColor: 'hover:from-green-600 hover:to-green-700'
-    },
-    {
       title: 'Dashboard Qurban',
-      description: 'Lihat statistik dan peta distribusi qurban secara real-time',
+      description: 'Lihat data distribusi qurban secara real-time dengan peta interaktif',
       icon: BarChart3,
       link: '/service/qurban/dashboard',
-      color: 'from-blue-500 to-blue-600',
-      hoverColor: 'hover:from-blue-600 hover:to-blue-700'
+      color: 'from-green-500 to-green-600',
+      hoverColor: 'hover:from-green-600 hover:to-green-700',
+      enabled: true
+    },
+    {
+      title: 'Pendaftaran Qurban',
+      description: 'Program Qurban 1446H - Pendaftaran Ditutup',
+      icon: Users,
+      link: '/service/qurban/dashboard', // Redirect to dashboard
+      color: 'from-gray-400 to-gray-500',
+      hoverColor: 'hover:from-gray-400 hover:to-gray-500',
+      enabled: false,
+      closedDate: 'Pendaftaran ditutup sejak 5 Juni 2025'
     },
     {
       title: 'Upload Data',
@@ -26,7 +29,8 @@ const QurbanService = () => {
       icon: Upload,
       link: '/service/qurban/upload',
       color: 'from-purple-500 to-purple-600',
-      hoverColor: 'hover:from-purple-600 hover:to-purple-700'
+      hoverColor: 'hover:from-purple-600 hover:to-purple-700',
+      enabled: true
     }
   ];
 
@@ -42,46 +46,100 @@ const QurbanService = () => {
             Majelis Telkomsel Taqwa menyediakan berbagai layanan untuk mendukung 
             pelaksanaan qurban yang amanah dan transparan
           </p>
+          
+          {/* Registration closed notice */}
+          <div className="mt-8 mx-auto max-w-2xl bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-center justify-center">
+              <div className="flex-shrink-0">
+                <span className="text-2xl">📢</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-amber-800">
+                  <strong>Program Qurban 1446H - Pendaftaran Ditutup.</strong> Silakan pantau distribusi melalui dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Service Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {services.map((service, index) => {
             const IconComponent = service.icon;
+            const isDisabled = !service.enabled;
+            
             return (
-              <Link
-                key={index}
-                to={service.link}
-                className="group block"
-              >
-                <div className={`
-                  relative overflow-hidden rounded-2xl bg-gradient-to-br ${service.color} 
-                  ${service.hoverColor} transition-all duration-300 transform 
-                  hover:scale-105 hover:shadow-2xl shadow-lg
-                `}>
-                  <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                  
-                  <div className="relative p-8 text-white">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                        <IconComponent className="w-8 h-8" />
+              <div key={index} className="group block relative">
+                {/* Conditional Link Wrapper */}
+                {isDisabled ? (
+                  <div className="relative cursor-not-allowed">
+                    <div className={`
+                      relative overflow-hidden rounded-2xl bg-gradient-to-br ${service.color} 
+                      transition-all duration-300 shadow-lg opacity-60
+                    `}>
+                      <div className="relative p-8 text-white">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <IconComponent className="w-8 h-8" />
+                          </div>
+                          <ArrowRight className="w-6 h-6 opacity-50" />
+                        </div>
+                        
+                        <h3 className="text-2xl font-bold mb-4">
+                          {service.title}
+                        </h3>
+                        
+                        <p className="text-white/90 leading-relaxed">
+                          {service.description}
+                        </p>
                       </div>
-                      <ArrowRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-300" />
+                      
+                      {/* Decorative element */}
+                      <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full"></div>
+                      
+                      {/* Overlay for disabled state */}
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-4 py-2 rounded-lg text-center shadow-lg">
+                          <div className="font-bold text-lg">PENDAFTARAN DITUTUP</div>
+                          {service.closedDate && (
+                            <div className="text-sm opacity-90 mt-1">{service.closedDate}</div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    
-                    <h3 className="text-2xl font-bold mb-4">
-                      {service.title}
-                    </h3>
-                    
-                    <p className="text-white/90 leading-relaxed">
-                      {service.description}
-                    </p>
                   </div>
-                  
-                  {/* Decorative element */}
-                  <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full transform group-hover:scale-110 transition-transform duration-300"></div>
-                </div>
-              </Link>
+                ) : (
+                  <Link to={service.link} className="block">
+                    <div className={`
+                      relative overflow-hidden rounded-2xl bg-gradient-to-br ${service.color} 
+                      ${service.hoverColor} transition-all duration-300 transform 
+                      hover:scale-105 hover:shadow-2xl shadow-lg
+                    `}>
+                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                      
+                      <div className="relative p-8 text-white">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <IconComponent className="w-8 h-8" />
+                          </div>
+                          <ArrowRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-300" />
+                        </div>
+                        
+                        <h3 className="text-2xl font-bold mb-4">
+                          {service.title}
+                        </h3>
+                        
+                        <p className="text-white/90 leading-relaxed">
+                          {service.description}
+                        </p>
+                      </div>
+                      
+                      {/* Decorative element */}
+                      <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full transform group-hover:scale-110 transition-transform duration-300"></div>
+                    </div>
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>
@@ -98,6 +156,11 @@ const QurbanService = () => {
               terintegrasi, kami memastikan setiap hewan qurban didistribusikan kepada 
               yang berhak menerimanya dengan dokumentasi yang lengkap.
             </p>
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-blue-800 font-medium">
+                📊 Pantau perkembangan distribusi qurban secara real-time melalui dashboard kami.
+              </p>
+            </div>
           </div>
         </div>
       </div>

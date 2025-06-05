@@ -33,6 +33,85 @@
   }
 }
 
+/* Registration Disabled State Styles */
+@layer utilities {
+  /* Pendaftaran card disabled styling */
+  .pendaftaran-card-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+    pointer-events: none;
+  }
+  
+  .pendaftaran-card-disabled::after {
+    content: "PENDAFTARAN DITUTUP";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(220, 38, 38, 0.95);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    backdrop-filter: blur(2px);
+  }
+  
+  /* Registration closed notice styling */
+  .registration-closed-notice {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 16px auto;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .registration-closed-notice p {
+    color: #92400e;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  /* Disabled card overlay */
+  .disabled-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    z-index: 5;
+  }
+  
+  .disabled-overlay .overlay-message {
+    background: rgba(220, 38, 38, 0.95);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+  }
+  
+  /* Hover states for disabled cards */
+  .pendaftaran-card-disabled:hover {
+    transform: none !important;
+    box-shadow: inherit !important;
+  }
+}
+
 /* Z-Index Hierarchy - Fix navbar priority */
 @layer utilities {
   /* Navbar should be on top */
@@ -213,6 +292,17 @@
     /* Hide unnecessary columns on mobile */
     .hidden-mobile {
       display: none !important;
+    }
+    
+    /* Mobile-specific disabled card adjustments */
+    .pendaftaran-card-disabled::after {
+      font-size: 14px !important;
+      padding: 8px 16px !important;
+    }
+    
+    .disabled-overlay .overlay-message {
+      font-size: 14px !important;
+      padding: 8px 16px !important;
     }
   }
   
