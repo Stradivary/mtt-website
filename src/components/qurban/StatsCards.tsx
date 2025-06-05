@@ -35,8 +35,6 @@ const getAnimalIcon = (jenis: string): JSX.Element => {
           </span>
         </div>
       );
-    case 'kambing':
-      return <span className={iconStyle}>🐐</span>;
     case 'domba':
       return <span className={iconStyle}>🐑</span>;
     default:
@@ -51,8 +49,6 @@ const getAnimalDisplayName = (jenis: string): string => {
       return 'Sapi';
     case 'sapi 1/7':
       return 'Sapi 1/7';
-    case 'kambing':
-      return 'Kambing';
     case 'domba':
       return 'Domba';
     default:
@@ -106,6 +102,8 @@ const StatsCards: React.FC<StatsCardsProps> = ({
 
   // Process animal breakdown: ensure proper order and include all animal types
   const processAnimalBreakdown = () => {
+    console.log('🐄 StatsCards: Processing animal breakdown:', animalBreakdown);
+    
     // Include ALL animal types, don't filter out anything
     const allEntries = Object.entries(animalBreakdown);
     
@@ -117,18 +115,24 @@ const StatsCards: React.FC<StatsCardsProps> = ({
       result[jenis] = count;
     });
     
-    // Add Sapi 1/7 if not present (with default quantity)
-    if (!result['Sapi 1/7'] && !result['sapi 1/7']) {
-      result['Sapi 1/7'] = 2; // Default quantity for new Sapi 1/7 type
-    }
+    // Ensure all animal types are represented, even with 0 count
+    const supportedAnimals = ['Sapi', 'Sapi 1/7', 'Domba'];
+    supportedAnimals.forEach(animal => {
+      // Check if animal exists (case insensitive)
+      const exists = Object.keys(result).some(key => key.toLowerCase() === animal.toLowerCase());
+      if (!exists) {
+        result[animal] = 0;
+      }
+    });
     
+    console.log('🐄 StatsCards: Processed breakdown:', result);
     return result;
   };
 
   const processedAnimalBreakdown = processAnimalBreakdown();
 
-  // Define display order: Sapi, Sapi 1/7, Kambing, Domba
-  const animalOrder = ['sapi', 'sapi 1/7', 'kambing', 'domba'];
+  // Define display order: Sapi, Sapi 1/7, Domba
+  const animalOrder = ['sapi', 'sapi 1/7', 'domba'];
   
   const orderedAnimals = animalOrder
     .map(animalType => {
@@ -139,6 +143,8 @@ const StatsCards: React.FC<StatsCardsProps> = ({
       return entry ? { jenis: entry[0], count: entry[1] } : null;
     })
     .filter(Boolean) as { jenis: string; count: number }[];
+
+  console.log('🐄 StatsCards: Ordered animals for display:', orderedAnimals);
 
   if (loading) {
     return (
@@ -186,7 +192,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({
         </div>
       ))}
 
-      {/* Animal Breakdown Card - Showing Sapi, Sapi 1/7, and Kambing in order */}
+      {/* Animal Breakdown Card - Showing all supported animal types */}
       {orderedAnimals.length > 0 && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
           {/* Content */}

@@ -404,7 +404,7 @@ const Upload = () => {
             alamat: record.alamat || null,
             provinsi: record.provinsi || null,
             kabupaten: record.kabupaten || null,
-            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba') || 'Sapi',
+            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Domba') || 'Sapi',
             jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
             nilai_qurban: parseFloat(record.nilai_qurban) || 0,
             tanggal_penyerahan: record.tanggal_penyerahan || null
@@ -428,7 +428,7 @@ const Upload = () => {
             alamat_penerima: record.alamat_penerima || '',
             provinsi: record.provinsi || null,
             kabupaten: record.kabupaten || null,
-            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba') || 'Sapi',
+            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Domba') || 'Sapi',
             jumlah_daging: parseFloat(record.jumlah_daging) || null,
             tanggal_distribusi: record.tanggal_distribusi || '',
             foto_distribusi_url: record.foto_distribusi_url || null,
@@ -892,7 +892,7 @@ const Upload = () => {
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Pastikan nama file mengandung "muzakki" atau "distribusi"</li>
                 <li>• Gunakan format tanggal: YYYY-MM-DD (2024-06-15)</li>
-                <li>• Jenis hewan: Sapi, Sapi 1/7, Kambing, atau Domba</li>
+                <li>• Jenis hewan: Sapi, Sapi 1/7, atau Domba</li>
                 <li>• Provinsi dan kabupaten menggunakan nama lengkap</li>
                 <li>• Kolom opsional boleh dikosongkan</li>
               </ul>

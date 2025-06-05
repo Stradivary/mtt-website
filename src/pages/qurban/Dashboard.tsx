@@ -44,23 +44,39 @@ const Dashboard = () => {
       const { supabase } = await import('../../lib/supabase');
       
       // Add cache-busting to animal breakdown query
-      const { data: muzakki } = await supabase
+      const { data: muzakki, error } = await supabase
         .from('muzakki')
         .select('jenis_hewan')
         .order('created_at', { ascending: false }) // Force fresh query
         .limit(10000);
 
-      if (muzakki) {
+      if (error) {
+        console.error('❌ Error fetching muzakki data:', error);
+        return;
+      }
+
+      console.log(`📊 Retrieved ${muzakki?.length || 0} muzakki records`);
+      
+      if (muzakki && muzakki.length > 0) {
+        // Log first few records to see what we have
+        console.log('📋 Sample muzakki records:', muzakki.slice(0, 5).map(m => m.jenis_hewan));
+        
         const breakdown = muzakki.reduce((acc, item) => {
           acc[item.jenis_hewan] = (acc[item.jenis_hewan] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
         
         console.log('✅ Animal breakdown updated:', breakdown);
+        console.log('🔍 Animal types found:', Object.keys(breakdown));
+        console.log('📊 Total counts:', Object.values(breakdown).reduce((a, b) => a + b, 0));
+        
         setAnimalBreakdown(breakdown);
+      } else {
+        console.log('⚠️ No muzakki data found');
+        setAnimalBreakdown({});
       }
     } catch (error) {
-      console.error('Error fetching animal breakdown:', error);
+      console.error('❌ Error fetching animal breakdown:', error);
     }
   };
 
@@ -335,8 +351,8 @@ const Dashboard = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {Object.entries(animalBreakdown)
                     .sort(([a], [b]) => {
-                      // Sort by custom order: Sapi, Sapi 1/7, Kambing, Domba
-                      const order = ['sapi', 'sapi 1/7', 'kambing', 'domba'];
+                      // Sort by custom order: Sapi, Sapi 1/7, Domba
+                      const order = ['sapi', 'sapi 1/7', 'domba'];
                       const indexA = order.findIndex(item => item.toLowerCase() === a.toLowerCase());
                       const indexB = order.findIndex(item => item.toLowerCase() === b.toLowerCase());
                       return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
