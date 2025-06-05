@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, RefreshCw, Filter, Download } from 'lucide-react';
+import { ArrowLeft, Clock, RefreshCw, Filter, Download, MapPin, BarChart3 } from 'lucide-react';
 import StatsCards from '../../components/qurban/StatsCards';
 import IndonesiaMap from '../../components/qurban/IndonesiaMap';
 import DistributionTable from '../../components/qurban/DistributionTable';
@@ -79,20 +79,20 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-20 bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto text-center">
+      <div className="min-h-screen pt-16 sm:pt-20 bg-gray-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8 max-w-md mx-auto text-center w-full">
           <div className="text-red-500 mb-4">
-            <Clock className="w-12 h-12 mx-auto" />
+            <Clock className="w-10 h-10 sm:w-12 sm:h-12 mx-auto" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
             Gagal Memuat Data
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-sm sm:text-base text-gray-600 mb-4">
             Terjadi kesalahan saat memuat data dashboard. Silakan coba lagi.
           </p>
           <button
             onClick={handleRefresh}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors touch-manipulation"
           >
             Coba Lagi
           </button>
@@ -102,34 +102,35 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen pt-16 sm:pt-20 bg-gray-50 main-content">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 dashboard-container">
         
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        {/* Header - Mobile Responsive */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-4 min-w-0">
               <Link 
                 to="/service" 
-                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors touch-manipulation"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Kembali ke Layanan
+                <ArrowLeft className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Kembali ke Layanan</span>
               </Link>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
-                <Clock className="w-4 h-4 inline mr-1" />
-                Update: {lastUpdate.toLocaleTimeString('id-ID')}
+            {/* Control Section - Mobile Responsive */}
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="text-xs sm:text-sm text-gray-500 flex items-center justify-center sm:justify-start">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 flex-shrink-0" />
+                <span>Update: {lastUpdate.toLocaleTimeString('id-ID')}</span>
               </div>
               
               {/* Auto-refresh Toggle */}
-              <div className="flex items-center space-x-2">
-                <label className="text-sm text-gray-600">Auto-refresh</label>
+              <div className="flex items-center justify-center space-x-2">
+                <label className="text-xs sm:text-sm text-gray-600">Auto-refresh</label>
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={`w-8 h-4 rounded-full transition-colors ${
+                  className={`w-8 h-4 rounded-full transition-colors touch-manipulation ${
                     autoRefresh ? 'bg-green-500' : 'bg-gray-300'
                   }`}
                 >
@@ -139,37 +140,40 @@ const Dashboard = () => {
                 </button>
               </div>
 
-              <button
-                onClick={handleExportData}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </button>
+              {/* Action Buttons - Mobile Responsive */}
+              <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+                <button
+                  onClick={handleExportData}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
+                >
+                  <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Export</span>
+                </button>
 
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
-              </button>
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
+                >
+                  <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+              </div>
             </div>
           </div>
           
-          <div className="mt-4">
-            <h1 className="text-3xl font-bold text-gray-900">
+          <div className="mt-4 sm:mt-6">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
               Dashboard Qurban MTT 1446H
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-sm sm:text-base text-gray-600 mt-2 leading-relaxed">
               Monitoring distribusi qurban secara real-time di seluruh Indonesia
             </p>
           </div>
         </div>
 
         {/* 1. Statistics Cards */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <StatsCards 
             stats={stats} 
             loading={loading}
@@ -177,81 +181,82 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* 2. Indonesia Map */}
-        <div className="mb-8">
-          <IndonesiaMap 
-            data={chartData.provinsiBreakdown}
-            totalPenerima={stats?.total_penerima || 0}
-            kabupatenCoverage={stats?.kabupaten_coverage || 0}
-          />
+        {/* 2. Indonesia Map - Auto-responsive */}
+        <div className="mb-6 sm:mb-8">
+          {chartData?.provinsiBreakdown && (
+            <IndonesiaMap 
+              data={chartData.provinsiBreakdown}
+              totalPenerima={stats?.total_penerima || 0}
+              kabupatenCoverage={stats?.kabupaten_coverage || 0}
+            />
+          )}
         </div>
 
-        {/* 3. Two Column Layout: Activities + Quick Stats */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-8">
-          {/* Activity Feed */}
-          <div className="lg:col-span-2">
-            <ActivityFeed 
-              activities={recentActivities} 
-              loading={loading}
-            />
-          </div>
-
-          {/* Quick Statistics */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                Ringkasan Cepat
-              </h3>
+        {/* 3. Quick Statistics - Moved from side to full width */}
+        <div className="mb-6 sm:mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 w-full overflow-hidden responsive-card">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">
+              Ringkasan Cepat
+            </h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <div className="flex flex-col items-center justify-center p-3 bg-blue-50 rounded-lg">
+                <span className="text-base sm:text-lg font-bold text-blue-600">
+                  {stats?.total_muzakki || 0}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Muzakki</span>
+              </div>
               
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Total Muzakki</span>
-                  <span className="text-lg font-bold text-blue-600">
-                    {stats?.total_muzakki || 0}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Total Penerima</span>
-                  <span className="text-lg font-bold text-green-600">
-                    {stats?.total_penerima || 0}
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Wilayah Jangkauan</span>
-                  <span className="text-lg font-bold text-purple-600">
-                    {stats?.kabupaten_coverage || 0} kab
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                  <span className="text-sm text-gray-700">Total Hewan</span>
-                  <span className="text-lg font-bold text-orange-600">
-                    {stats?.total_hewan || 0} ekor
-                  </span>
-                </div>
-
-                {/* Animal breakdown if available */}
-                {Object.keys(animalBreakdown).length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Jenis Hewan</h4>
-                    {Object.entries(animalBreakdown).map(([jenis, count]) => (
-                      <div key={jenis} className="flex justify-between text-sm mb-2">
-                        <span className="text-gray-600">{jenis}</span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              <div className="flex flex-col items-center justify-center p-3 bg-green-50 rounded-lg">
+                <span className="text-base sm:text-lg font-bold text-green-600">
+                  {stats?.total_penerima || 0}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Penerima</span>
+              </div>
+              
+              <div className="flex flex-col items-center justify-center p-3 bg-purple-50 rounded-lg">
+                <span className="text-base sm:text-lg font-bold text-purple-600">
+                  {stats?.kabupaten_coverage || 0}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Kab/Kota</span>
+              </div>
+              
+              <div className="flex flex-col items-center justify-center p-3 bg-orange-50 rounded-lg">
+                <span className="text-base sm:text-lg font-bold text-orange-600">
+                  {stats?.total_hewan || 0}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Hewan</span>
               </div>
             </div>
+
+            {/* Animal breakdown if available */}
+            {Object.keys(animalBreakdown).length > 0 && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3">Breakdown Jenis Hewan</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {Object.entries(animalBreakdown).map(([jenis, count]) => (
+                    <div key={jenis} className="flex justify-between items-center text-xs sm:text-sm p-2 bg-gray-50 rounded">
+                      <span className="text-gray-600 truncate mr-2">{jenis}</span>
+                      <span className="font-medium flex-shrink-0">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* 4. Distribution Table */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <DistributionTable refreshTrigger={refreshTrigger} />
+        </div>
+
+        {/* 5. Activity Feed - Moved to bottom */}
+        <div className="mb-6 sm:mb-8">
+          <ActivityFeed 
+            activities={recentActivities} 
+            loading={loading}
+          />
         </div>
       </div>
     </div>

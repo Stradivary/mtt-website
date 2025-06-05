@@ -15,7 +15,7 @@ export interface Muzakki {
   nama_muzakki: string;
   nomor_telepon: string;
   alamat_muzakki?: string;
-  jenis_hewan: 'Sapi' | 'Kambing' | 'Domba';
+  jenis_hewan: 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba';
   jumlah_bagian: number;
   nilai_qurban: number;
   tanggal_setor: string;
@@ -32,7 +32,7 @@ export interface Distribusi {
   kecamatan?: string;
   desa_kelurahan?: string;
   lokasi_detail: string;
-  jenis_hewan: 'Sapi' | 'Kambing' | 'Domba';
+  jenis_hewan: 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba';
   estimasi_berat_kg?: number;
   jumlah_penerima: number;
   nama_penerima_sample?: string;

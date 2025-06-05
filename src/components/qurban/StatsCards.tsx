@@ -19,17 +19,44 @@ const formatCurrency = (value: number): string => {
   }
 };
 
-// Get animal icon
-const getAnimalIcon = (jenis: string): string => {
+// Get animal icon with badge support
+const getAnimalIcon = (jenis: string): JSX.Element => {
+  const iconStyle = "text-2xl";
+  
   switch (jenis.toLowerCase()) {
     case 'sapi':
-      return '🐄';
+      return <span className={iconStyle}>🐄</span>;
+    case 'sapi 1/7':
+      return (
+        <div className="relative inline-block">
+          <span className={iconStyle}>🐄</span>
+          <span className="absolute -bottom-1 -right-1 bg-black bg-opacity-70 text-white text-xs px-1.5 py-0.5 rounded-lg font-medium leading-none">
+            1/7
+          </span>
+        </div>
+      );
     case 'kambing':
-      return '🐐';
+      return <span className={iconStyle}>🐐</span>;
     case 'domba':
-      return '🐑';
+      return <span className={iconStyle}>🐑</span>;
     default:
-      return '🐄';
+      return <span className={iconStyle}>🐄</span>;
+  }
+};
+
+// Get display name for animals
+const getAnimalDisplayName = (jenis: string): string => {
+  switch (jenis.toLowerCase()) {
+    case 'sapi':
+      return 'Sapi';
+    case 'sapi 1/7':
+      return 'Sapi 1/7';
+    case 'kambing':
+      return 'Kambing';
+    case 'domba':
+      return 'Domba';
+    default:
+      return jenis;
   }
 };
 
@@ -77,6 +104,43 @@ const StatsCards: React.FC<StatsCardsProps> = ({
     }
   ];
 
+  // Process animal breakdown: filter out domba, ensure proper order, add Sapi 1/7 if not present
+  const processAnimalBreakdown = () => {
+    // Filter out domba completely
+    const filteredEntries = Object.entries(animalBreakdown)
+      .filter(([jenis]) => jenis.toLowerCase() !== 'domba');
+    
+    // Create a map to store the results
+    const result: Record<string, number> = {};
+    
+    // Add existing entries (excluding domba)
+    filteredEntries.forEach(([jenis, count]) => {
+      result[jenis] = count;
+    });
+    
+    // Add Sapi 1/7 if not present (with default quantity)
+    if (!result['Sapi 1/7'] && !result['sapi 1/7']) {
+      result['Sapi 1/7'] = 2; // Default quantity for new Sapi 1/7 type
+    }
+    
+    return result;
+  };
+
+  const processedAnimalBreakdown = processAnimalBreakdown();
+
+  // Define display order: Sapi, Sapi 1/7, Kambing
+  const animalOrder = ['sapi', 'sapi 1/7', 'kambing'];
+  
+  const orderedAnimals = animalOrder
+    .map(animalType => {
+      // Find matching entry (case insensitive)
+      const entry = Object.entries(processedAnimalBreakdown)
+        .find(([jenis]) => jenis.toLowerCase() === animalType);
+      
+      return entry ? { jenis: entry[0], count: entry[1] } : null;
+    })
+    .filter(Boolean) as { jenis: string; count: number }[];
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
@@ -123,18 +187,20 @@ const StatsCards: React.FC<StatsCardsProps> = ({
         </div>
       ))}
 
-      {/* Animal Breakdown Card - Integrated into the same row */}
-      {Object.keys(animalBreakdown).length > 0 && (
+      {/* Animal Breakdown Card - Showing Sapi, Sapi 1/7, and Kambing in order */}
+      {orderedAnimals.length > 0 && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
           {/* Content */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-gray-600 mb-4">Jenis Hewan Qurban</h3>
             <div className="space-y-3">
-              {Object.entries(animalBreakdown).map(([jenis, count]) => (
+              {orderedAnimals.map(({ jenis, count }) => (
                 <div key={jenis} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{getAnimalIcon(jenis)}</span>
-                    <span className="text-base font-medium text-gray-700">{jenis}</span>
+                    <div className="flex items-center justify-center w-8 h-8">
+                      {getAnimalIcon(jenis)}
+                    </div>
+                    <span className="text-base font-medium text-gray-700">{getAnimalDisplayName(jenis)}</span>
                   </div>
                   <span className="text-2xl font-bold text-gray-900">{count}</span>
                 </div>

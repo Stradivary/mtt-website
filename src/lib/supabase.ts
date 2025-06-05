@@ -39,7 +39,7 @@ export interface Muzakki {
   alamat?: string;
   provinsi?: string;
   kabupaten?: string;
-  jenis_hewan: 'Sapi' | 'Kambing' | 'Domba';
+  jenis_hewan: 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba';
   jumlah_hewan: number;
   nilai_qurban: number;
   tanggal_penyerahan?: string;
@@ -53,7 +53,7 @@ export interface Distribusi {
   alamat_penerima: string;
   provinsi?: string;
   kabupaten?: string;
-  jenis_hewan: 'Sapi' | 'Kambing' | 'Domba';
+  jenis_hewan: 'Sapi' | 'Sapi 1/7' | 'Kambing' | 'Domba';
   jumlah_daging?: number;
   tanggal_distribusi: string;
   foto_distribusi_url?: string;
