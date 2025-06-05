@@ -333,7 +333,15 @@ const Dashboard = () => {
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3">Breakdown Jenis Hewan</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {Object.entries(animalBreakdown).map(([jenis, count]) => (
+                  {Object.entries(animalBreakdown)
+                    .sort(([a], [b]) => {
+                      // Sort by custom order: Sapi, Sapi 1/7, Kambing, Domba
+                      const order = ['sapi', 'sapi 1/7', 'kambing', 'domba'];
+                      const indexA = order.findIndex(item => item.toLowerCase() === a.toLowerCase());
+                      const indexB = order.findIndex(item => item.toLowerCase() === b.toLowerCase());
+                      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+                    })
+                    .map(([jenis, count]) => (
                     <div key={jenis} className="flex justify-between items-center text-xs sm:text-sm p-2 bg-gray-50 rounded">
                       <span className="text-gray-600 truncate mr-2">{jenis}</span>
                       <span className="font-medium flex-shrink-0">{count}</span>

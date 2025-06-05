@@ -892,7 +892,7 @@ const Upload = () => {
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Pastikan nama file mengandung "muzakki" atau "distribusi"</li>
                 <li>• Gunakan format tanggal: YYYY-MM-DD (2024-06-15)</li>
-                <li>• Jenis hewan: Sapi, Kambing, atau Domba</li>
+                <li>• Jenis hewan: Sapi, Sapi 1/7, Kambing, atau Domba</li>
                 <li>• Provinsi dan kabupaten menggunakan nama lengkap</li>
                 <li>• Kolom opsional boleh dikosongkan</li>
               </ul>

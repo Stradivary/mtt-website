@@ -104,17 +104,16 @@ const StatsCards: React.FC<StatsCardsProps> = ({
     }
   ];
 
-  // Process animal breakdown: filter out domba, ensure proper order, add Sapi 1/7 if not present
+  // Process animal breakdown: ensure proper order and include all animal types
   const processAnimalBreakdown = () => {
-    // Filter out domba completely
-    const filteredEntries = Object.entries(animalBreakdown)
-      .filter(([jenis]) => jenis.toLowerCase() !== 'domba');
+    // Include ALL animal types, don't filter out anything
+    const allEntries = Object.entries(animalBreakdown);
     
     // Create a map to store the results
     const result: Record<string, number> = {};
     
-    // Add existing entries (excluding domba)
-    filteredEntries.forEach(([jenis, count]) => {
+    // Add all existing entries
+    allEntries.forEach(([jenis, count]) => {
       result[jenis] = count;
     });
     
@@ -128,8 +127,8 @@ const StatsCards: React.FC<StatsCardsProps> = ({
 
   const processedAnimalBreakdown = processAnimalBreakdown();
 
-  // Define display order: Sapi, Sapi 1/7, Kambing
-  const animalOrder = ['sapi', 'sapi 1/7', 'kambing'];
+  // Define display order: Sapi, Sapi 1/7, Kambing, Domba
+  const animalOrder = ['sapi', 'sapi 1/7', 'kambing', 'domba'];
   
   const orderedAnimals = animalOrder
     .map(animalType => {
