@@ -13,6 +13,7 @@ const Dashboard = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [animalBreakdown, setAnimalBreakdown] = useState<Record<string, number>>({});
+  const [mitraCount, setMitraCount] = useState(0);
   const [debugMode, setDebugMode] = useState(false); // Debug mode toggle
   
   const { 
@@ -36,6 +37,7 @@ const Dashboard = () => {
   // Fetch real animal breakdown data with cache-busting
   useEffect(() => {
     fetchAnimalBreakdown();
+    fetchMitraCount();
   }, [refreshTrigger]);
 
   const fetchAnimalBreakdown = async () => {
@@ -46,7 +48,7 @@ const Dashboard = () => {
       // Add cache-busting to animal breakdown query
       const { data: muzakki, error } = await supabase
         .from('muzakki')
-        .select('jenis_hewan')
+        .select('jenis_hewan, jumlah_hewan')
         .order('created_at', { ascending: false }) // Force fresh query
         .limit(10000);
 
@@ -59,16 +61,18 @@ const Dashboard = () => {
       
       if (muzakki && muzakki.length > 0) {
         // Log first few records to see what we have
-        console.log('📋 Sample muzakki records:', muzakki.slice(0, 5).map(m => m.jenis_hewan));
+        console.log('📋 Sample muzakki records:', muzakki.slice(0, 5).map(m => `${m.jenis_hewan}(${m.jumlah_hewan})`));
         
+        // Sum jumlah_hewan instead of counting rows
         const breakdown = muzakki.reduce((acc, item) => {
-          acc[item.jenis_hewan] = (acc[item.jenis_hewan] || 0) + 1;
+          const jumlah = item.jumlah_hewan || 1;
+          acc[item.jenis_hewan] = (acc[item.jenis_hewan] || 0) + jumlah;
           return acc;
         }, {} as Record<string, number>);
         
-        console.log('✅ Animal breakdown updated:', breakdown);
+        console.log('✅ Animal breakdown updated (sum of jumlah_hewan):', breakdown);
         console.log('🔍 Animal types found:', Object.keys(breakdown));
-        console.log('📊 Total counts:', Object.values(breakdown).reduce((a, b) => a + b, 0));
+        console.log('📊 Total animal count:', Object.values(breakdown).reduce((a, b) => a + b, 0));
         
         setAnimalBreakdown(breakdown);
       } else {
@@ -80,11 +84,50 @@ const Dashboard = () => {
     }
   };
 
+  const fetchMitraCount = async () => {
+    try {
+      console.log('👥 Fetching mitra count...');
+      const { supabase } = await import('../../lib/supabase');
+      
+      // Get unique mitra from distribusi table via uploader relationship
+      const { data: uploaders, error } = await supabase
+        .from('uploaders')
+        .select('mitra_name')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching mitra data:', error);
+        return;
+      }
+
+      if (uploaders && uploaders.length > 0) {
+        // Extract unique mitra names
+        const uniqueMitra = new Set();
+        uploaders.forEach(uploader => {
+          if (uploader.mitra_name) {
+            uniqueMitra.add(uploader.mitra_name);
+          }
+        });
+        
+        console.log('✅ Mitra count updated:', uniqueMitra.size);
+        console.log('🏢 Unique mitra:', Array.from(uniqueMitra));
+        
+        setMitraCount(uniqueMitra.size);
+      } else {
+        console.log('⚠️ No uploader data found');
+        setMitraCount(0);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching mitra count:', error);
+    }
+  };
+
   const handleRefresh = () => {
     console.log('🔄 Manual refresh initiated from Dashboard');
     refreshData();
     setRefreshTrigger(prev => prev + 1);
     fetchAnimalBreakdown();
+    fetchMitraCount();
   };
 
   const handleHardRefresh = async () => {
@@ -293,6 +336,7 @@ const Dashboard = () => {
             stats={stats} 
             loading={loading}
             animalBreakdown={animalBreakdown}
+            mitraCount={mitraCount}
           />
         </div>
 
@@ -314,12 +358,12 @@ const Dashboard = () => {
               Ringkasan Cepat
             </h3>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
               <div className="flex flex-col items-center justify-center p-3 bg-blue-50 rounded-lg">
                 <span className="text-base sm:text-lg font-bold text-blue-600">
                   {stats?.total_muzakki || 0}
                 </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Muzakki</span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Pequrban</span>
               </div>
               
               <div className="flex flex-col items-center justify-center p-3 bg-green-50 rounded-lg">
@@ -338,9 +382,16 @@ const Dashboard = () => {
               
               <div className="flex flex-col items-center justify-center p-3 bg-orange-50 rounded-lg">
                 <span className="text-base sm:text-lg font-bold text-orange-600">
-                  {stats?.total_hewan || 0}
+                  {stats?.total_penerima || 0}
                 </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Hewan</span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Paket Distribusi</span>
+              </div>
+
+              <div className="flex flex-col items-center justify-center p-3 bg-indigo-50 rounded-lg">
+                <span className="text-base sm:text-lg font-bold text-indigo-600">
+                  {mitraCount || 0}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Mitra</span>
               </div>
             </div>
 

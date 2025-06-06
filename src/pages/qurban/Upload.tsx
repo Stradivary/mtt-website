@@ -118,48 +118,48 @@ const Upload = () => {
     setUploadFiles(prev => [...prev, ...newUploads]);
   };
     
+  // Advanced CSV Line Parser - Handles commas within data fields
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+    
+    while (i < line.length) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Escaped quote
+          current += '"';
+          i += 2;
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+          i++;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // Field separator (only when not in quotes)
+        result.push(current.trim());
+        current = '';
+        i++;
+      } else {
+        current += char;
+        i++;
+      }
+    }
+    
+    // Add the last field
+    result.push(current.trim());
+    return result;
+  };
+
   // Advanced CSV Parser - Handles commas within data fields
   const parseCSV = (text: string): any[] => {
     const lines = text.split('\n').filter(line => line.trim() !== '');
     if (lines.length < 2) return [];
 
     console.log(`📝 CSV parsing started: ${lines.length} total lines`);
-    
-    // Parse CSV line properly handling quoted fields and commas within data
-    const parseCSVLine = (line: string): string[] => {
-      const result: string[] = [];
-      let current = '';
-      let inQuotes = false;
-      let i = 0;
-      
-      while (i < line.length) {
-        const char = line[i];
-        
-        if (char === '"') {
-          if (inQuotes && line[i + 1] === '"') {
-            // Escaped quote
-            current += '"';
-            i += 2;
-          } else {
-            // Toggle quote state
-            inQuotes = !inQuotes;
-            i++;
-          }
-        } else if (char === ',' && !inQuotes) {
-          // Field separator (only when not in quotes)
-          result.push(current.trim());
-          current = '';
-          i++;
-        } else {
-          current += char;
-          i++;
-        }
-      }
-      
-      // Add the last field
-      result.push(current.trim());
-      return result;
-    };
     
     // Parse headers
     const headers = parseCSVLine(lines[0]).map(h => h.trim());
@@ -193,19 +193,20 @@ const Upload = () => {
         record[header] = value !== null && value !== undefined && value !== '' ? value : null;
       });
       
-      // Only add record if it has at least one meaningful field (like nama_muzakki)
-      const hasRequiredData = record.nama_muzakki && record.nama_muzakki.trim() !== '';
+      // Only add record if it has at least one meaningful field
+      const hasRequiredData = (record.nama_muzakki && record.nama_muzakki.trim() !== '') || 
+                              (record.nama_penerima && record.nama_penerima.trim() !== '');
       
       if (hasRequiredData) {
         records.push(record);
         console.log(`✅ CSV processed row ${i + 1} (${values.length} fields):`, {
-          nama_muzakki: record.nama_muzakki,
+          nama: record.nama_muzakki || record.nama_penerima,
           email: record.email,
           telepon: record.telepon,
-          alamat: record.alamat?.substring(0, 50) + (record.alamat?.length > 50 ? '...' : '')
+          alamat: (record.alamat || record.alamat_penerima)?.substring(0, 50) + ((record.alamat || record.alamat_penerima)?.length > 50 ? '...' : '')
         });
       } else {
-        console.log(`⚠️ Skipping row ${i + 1} - missing required data (nama_muzakki). Parsed ${values.length} fields:`, values.slice(0, 3));
+        console.log(`⚠️ Skipping row ${i + 1} - missing required data. Parsed ${values.length} fields:`, values.slice(0, 3));
       }
     }
     
@@ -280,6 +281,75 @@ const Upload = () => {
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsArrayBuffer(file);
     });
+  };
+
+  // Excel date conversion utility
+  const convertExcelDate = (excelDate: any): string | null => {
+    if (!excelDate) return null;
+    
+    // If it's already a valid date string, return it
+    if (typeof excelDate === 'string' && /^\d{4}-\d{2}-\d{2}/.test(excelDate)) {
+      return excelDate;
+    }
+    
+    // If it's a number (Excel serial date)
+    const serialNumber = parseFloat(excelDate);
+    if (!isNaN(serialNumber) && serialNumber > 0) {
+      // Excel epoch is January 1, 1900 (with leap year bug compensation)
+      const excelEpoch = new Date(1900, 0, 1);
+      // Subtract 2 days to account for Excel's leap year bug (1900 wasn't a leap year)
+      const days = serialNumber - 2;
+      const convertedDate = new Date(excelEpoch.getTime() + days * 24 * 60 * 60 * 1000);
+      
+      // Format as YYYY-MM-DD
+      const year = convertedDate.getFullYear();
+      const month = String(convertedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(convertedDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      
+      console.log(`📅 Converted Excel date ${excelDate} -> ${dateString}`);
+      return dateString;
+    }
+    
+    // If it's a Date object
+    if (excelDate instanceof Date) {
+      const year = excelDate.getFullYear();
+      const month = String(excelDate.getMonth() + 1).padStart(2, '0');
+      const day = String(excelDate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    
+    console.warn(`⚠️ Could not convert date: ${excelDate} (type: ${typeof excelDate})`);
+    return null;
+  };
+
+  // Validate jenis hewan
+  const validateJenisHewan = (jenisHewan: string): 'Sapi' | 'Sapi 1/7' | 'Domba' => {
+    const cleaned = String(jenisHewan || '').trim();
+    const lowerCase = cleaned.toLowerCase();
+    
+    if (lowerCase.includes('sapi 1/7') || lowerCase.includes('sapi1/7')) {
+      return 'Sapi 1/7';
+    } else if (lowerCase.includes('sapi')) {
+      return 'Sapi';
+    } else if (lowerCase.includes('domba') || lowerCase.includes('kambing')) {
+      return 'Domba';
+    }
+    
+    // Default to Sapi if unknown
+    console.warn(`⚠️ Unknown jenis_hewan: ${jenisHewan}, defaulting to Sapi`);
+    return 'Sapi';
+  };
+
+  // Clean string data to prevent query issues
+  const cleanString = (value: any): string | null => {
+    if (value === null || value === undefined) return null;
+    
+    const str = String(value).trim();
+    if (str === '' || str === 'null' || str === 'undefined') return null;
+    
+    // Remove any special characters that might cause query issues
+    return str.replace(/[\x00-\x1F\x7F]/g, ''); // Remove control characters
   };
 
   // Process single file upload
@@ -359,6 +429,9 @@ const Upload = () => {
             if (record.nama_muzakki && record.nama_muzakki.trim() !== '') {
               alternativeRecords.push(record);
               console.log(`✅ Alternative parsing row ${i + 1}: ${record.nama_muzakki}`);
+            } else if (record.nama_penerima && record.nama_penerima.trim() !== '') {
+              alternativeRecords.push(record);
+              console.log(`✅ Alternative parsing row ${i + 1}: ${record.nama_penerima}`);
             }
           }
           
@@ -398,16 +471,16 @@ const Upload = () => {
           
           return {
             uploader_id: uploader.id,
-            nama_muzakki: record.nama_muzakki || '',
-            email: record.email || null,
-            telepon: record.telepon || null,
-            alamat: record.alamat || null,
-            provinsi: record.provinsi || null,
-            kabupaten: record.kabupaten || null,
-            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Domba') || 'Sapi',
+            nama_muzakki: cleanString(record.nama_muzakki) || '',
+            email: cleanString(record.email),
+            telepon: cleanString(record.telepon),
+            alamat: cleanString(record.alamat),
+            provinsi: cleanString(record.provinsi),
+            kabupaten: cleanString(record.kabupaten),
+            jenis_hewan: validateJenisHewan(record.jenis_hewan),
             jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
             nilai_qurban: parseFloat(record.nilai_qurban) || 0,
-            tanggal_penyerahan: record.tanggal_penyerahan || null
+            tanggal_penyerahan: convertExcelDate(record.tanggal_penyerahan)
           };
         });
 
@@ -422,22 +495,38 @@ const Upload = () => {
             console.warn(`⚠️ Row ${index + 2}: Missing nama_penerima`);
           }
           
-          return {
+          // Clean and validate data
+          const cleanRecord = {
             uploader_id: uploader.id,
-            nama_penerima: record.nama_penerima || '',
-            alamat_penerima: record.alamat_penerima || '',
-            provinsi: record.provinsi || null,
-            kabupaten: record.kabupaten || null,
-            jenis_hewan: (record.jenis_hewan as 'Sapi' | 'Sapi 1/7' | 'Domba') || 'Sapi',
-            jumlah_daging: parseFloat(record.jumlah_daging) || null,
-            tanggal_distribusi: record.tanggal_distribusi || '',
-            foto_distribusi_url: record.foto_distribusi_url || null,
-            status: record.status || 'Selesai',
-            catatan: record.catatan || null
+            nama_penerima: cleanString(record.nama_penerima) || '',
+            alamat_penerima: cleanString(record.alamat_penerima) || '',
+            provinsi: cleanString(record.provinsi),
+            kabupaten: cleanString(record.kabupaten),
+            jenis_hewan: validateJenisHewan(record.jenis_hewan),
+            jumlah_daging: record.jumlah_daging ? parseFloat(String(record.jumlah_daging)) : null,
+            tanggal_distribusi: convertExcelDate(record.tanggal_distribusi) || new Date().toISOString().split('T')[0],
+            foto_distribusi_url: cleanString(record.foto_distribusi_url),
+            status: cleanString(record.status) || 'Selesai',
+            catatan: cleanString(record.catatan)
           };
-        });
+          
+          // Log problematic records
+          if (!cleanRecord.nama_penerima || !cleanRecord.alamat_penerima) {
+            console.error(`❌ Row ${index + 2}: Invalid record`, cleanRecord);
+          }
+          
+          console.log(`🔧 Cleaned record ${index + 2}:`, {
+            nama: cleanRecord.nama_penerima,
+            alamat: cleanRecord.alamat_penerima?.substring(0, 30) + '...',
+            tanggal: cleanRecord.tanggal_distribusi,
+            jenis_hewan: cleanRecord.jenis_hewan
+          });
+          
+          return cleanRecord;
+        }).filter(record => record.nama_penerima && record.alamat_penerima); // Filter out invalid records
 
-        console.log(`📊 Prepared ${distribusiRecords.length} distribusi records for database insertion`);
+        console.log(`📊 Prepared ${distribusiRecords.length} valid distribusi records for database insertion`);
+        console.log('🔍 Sample record:', distribusiRecords[0]);
         updateUploadStatus(upload.id, 'uploading', undefined, 70);
         result = await saveDistribusiData(distribusiRecords);
       }

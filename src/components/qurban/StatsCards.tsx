@@ -6,6 +6,7 @@ interface StatsCardsProps {
   stats: DashboardStats | null;
   loading: boolean;
   animalBreakdown?: Record<string, number>;
+  mitraCount?: number;
 }
 
 // Format currency to Indonesian format (juta, milyar)
@@ -59,11 +60,12 @@ const getAnimalDisplayName = (jenis: string): string => {
 const StatsCards: React.FC<StatsCardsProps> = ({ 
   stats, 
   loading, 
-  animalBreakdown = {} 
+  animalBreakdown = {}, 
+  mitraCount = 0 
 }) => {
   const cards = [
     {
-      title: 'Total Muzakki',
+      title: 'Total Pequrban',
       value: stats?.total_muzakki?.toLocaleString('id-ID') || '0',
       subtitle: 'Donatur',
       icon: Users,
@@ -97,6 +99,15 @@ const StatsCards: React.FC<StatsCardsProps> = ({
       color: 'from-purple-500 to-purple-600',
       textColor: 'text-purple-600',
       bgColor: 'bg-purple-50'
+    },
+    {
+      title: 'Total Mitra',
+      value: mitraCount?.toLocaleString('id-ID') || '0',
+      subtitle: 'Partner',
+      icon: Target,
+      color: 'from-indigo-500 to-indigo-600',
+      textColor: 'text-indigo-600',
+      bgColor: 'bg-indigo-50'
     }
   ];
 
@@ -167,7 +178,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
       {/* Main Stats Cards */}
       {cards.map((card, index) => (
         <div
@@ -192,22 +203,22 @@ const StatsCards: React.FC<StatsCardsProps> = ({
         </div>
       ))}
 
-      {/* Animal Breakdown Card - Showing all supported animal types */}
+      {/* Animal Breakdown Card - Showing all supported animal types with larger numbers */}
       {orderedAnimals.length > 0 && (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-300">
           {/* Content */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-gray-600 mb-4">Jenis Hewan Qurban</h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {orderedAnimals.map(({ jenis, count }) => (
                 <div key={jenis} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-8 h-8">
+                    <div className="flex items-center justify-center w-10 h-10">
                       {getAnimalIcon(jenis)}
                     </div>
-                    <span className="text-base font-medium text-gray-700">{getAnimalDisplayName(jenis)}</span>
+                    <span className="text-sm font-medium text-gray-700">{getAnimalDisplayName(jenis)}</span>
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{count}</span>
+                  <span className="text-4xl font-bold text-gray-900">{count}</span>
                 </div>
               ))}
             </div>

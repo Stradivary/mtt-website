@@ -225,10 +225,10 @@ const DistributionTable: React.FC<DistributionTableProps> = ({
           <div className="text-xs sm:text-sm text-gray-600">Total Hewan</div>
         </div>
         <div className="bg-purple-50 rounded-lg p-3 sm:p-4 text-center">
-          <div className="text-xl sm:text-2xl font-bold text-purple-600">
-            {filteredData.reduce((sum, item) => sum + item.total_daging, 0).toFixed(1)} kg
+          <div className="text-lg font-bold text-emerald-600">
+            {filteredData.reduce((sum, item) => sum + item.total_daging, 0).toFixed(1)} paket
           </div>
-          <div className="text-xs sm:text-sm text-gray-600">Total Daging</div>
+          <div className="text-sm text-gray-600">Total Daging</div>
         </div>
       </div>
 
@@ -302,7 +302,7 @@ const DistributionTable: React.FC<DistributionTableProps> = ({
                     <div className="text-xs sm:text-sm text-gray-900">{item.total_hewan} ekor</div>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <div className="text-xs sm:text-sm text-gray-900">{item.total_daging.toFixed(1)} kg</div>
+                    <div className="text-xs sm:text-sm text-gray-900">{item.total_daging.toFixed(1)} paket</div>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden-mobile">
                     <div className="flex flex-wrap gap-1">

@@ -61,25 +61,270 @@ const MapController = ({ onMapReady, onError }: {
   return null;
 };
 
-// Province coordinates for markers
+// Province coordinates for markers - Updated with more accurate coordinates (capital cities)
 const provinceCoordinates: Record<string, [number, number]> = {
-  'DKI Jakarta': [-6.2, 106.8],
-  'Jawa Barat': [-6.75, 106.65],
-  'Jawa Tengah': [-7.05, 110.3],
-  'Jawa Timur': [-7.5, 113.35],
-  'Sumatera Utara': [2.65, 99.15],
-  'Sumatera Barat': [-0.65, 100.0],
-  'Kalimantan Timur': [1.25, 116.25],
-  'Sulawesi Selatan': [-4.5, 120.25]
+  // Sumatera
+  'Aceh': [5.5477, 95.3238], // Banda Aceh
+  'Sumatera Utara': [3.5952, 98.6722], // Medan - VERIFIED
+  'Sumatera Barat': [-0.9471, 100.4172], // Padang
+  'Riau': [0.5071, 101.4478], // Pekanbaru
+  'Kepulauan Riau': [1.1456, 104.0305], // Tanjung Pinang
+  'Jambi': [-1.6101, 103.6131], // Jambi
+  'Sumatera Selatan': [-2.9761, 104.7754], // Palembang
+  'Bangka Belitung': [-2.1384, 106.1171], // Pangkal Pinang
+  'Bengkulu': [-3.8004, 102.2655], // Bengkulu
+  'Lampung': [-5.4502, 105.2670], // Bandar Lampung
+  
+  // Jawa
+  'DKI Jakarta': [-6.2088, 106.8456], // Jakarta
+  'Jawa Barat': [-6.9147, 107.6098], // Bandung
+  'Banten': [-6.1200, 106.1500], // Serang
+  'Jawa Tengah': [-7.7956, 110.3695], // Semarang  
+  'DI Yogyakarta': [-7.7956, 110.3695], // Yogyakarta
+  'Jawa Timur': [-7.2504, 112.7688], // Surabaya
+  
+  // Kalimantan
+  'Kalimantan Barat': [-0.0263, 109.3425], // Pontianak
+  'Kalimantan Tengah': [-2.2081, 113.9211], // Palangka Raya
+  'Kalimantan Selatan': [-3.3186, 114.5942], // Banjarmasin
+  'Kalimantan Timur': [-0.5017, 117.1536], // Samarinda
+  'Kalimantan Utara': [3.0730, 116.0413], // Tanjung Selor
+  
+  // Sulawesi
+  'Sulawesi Utara': [1.4748, 124.8421], // Manado
+  'Sulawesi Tengah': [-0.8999, 119.8707], // Palu
+  'Sulawesi Selatan': [-5.1477, 119.4327], // Makassar
+  'Sulawesi Tenggara': [-4.1401, 122.1748], // Kendari
+  'Gorontalo': [0.5435, 123.0682], // Gorontalo
+  'Sulawesi Barat': [-2.6707, 118.8987], // Mamuju
+  
+  // Bali & Nusa Tenggara
+  'Bali': [-8.6705, 115.2126], // Denpasar
+  'Nusa Tenggara Barat': [-8.5833, 116.1167], // Mataram
+  'Nusa Tenggara Timur': [-10.1772, 123.6070], // Kupang - VERIFIED NTT
+  
+  // Maluku
+  'Maluku': [-3.6954, 128.1814], // Ambon
+  'Maluku Utara': [0.7893, 127.3815], // Ternate
+  
+  // Papua
+  'Papua': [-2.5489, 140.7156], // Jayapura
+  'Papua Barat': [-0.8614, 134.0758], // Manokwari
+  'Papua Tengah': [-4.0648, 136.2672], // Nabire
+  'Papua Pegunungan': [-4.0648, 138.5801], // Wamena
+  'Papua Selatan': [-6.0882, 140.7713], // Merauke
+  'Papua Barat Daya': [-1.9345, 132.2755] // Sorong
 };
 
-// Custom marker icon - optimized for mobile
+// Province name mapping to handle variations in data
+const provinceNameMapping: Record<string, string> = {
+  // Handle alternative names - Enhanced mapping
+  'Jakarta': 'DKI Jakarta',
+  'DIY': 'DI Yogyakarta',
+  'Yogyakarta': 'DI Yogyakarta',
+  'Jogja': 'DI Yogyakarta',
+  'Yogya': 'DI Yogyakarta',
+  
+  // Sumatera variations - ENHANCED
+  'Sumatra Utara': 'Sumatera Utara',
+  'Sumut': 'Sumatera Utara',
+  'Sumatera Utara': 'Sumatera Utara',
+  'SUMUT': 'Sumatera Utara',
+  'Sum Ut': 'Sumatera Utara',
+  'Sumatra_Utara': 'Sumatera Utara',
+  
+  'Sumatra Barat': 'Sumatera Barat',
+  'Sumbar': 'Sumatera Barat',
+  'Sumatera Barat': 'Sumatera Barat',
+  'SUMBAR': 'Sumatera Barat',
+  'Sum Bar': 'Sumatera Barat',
+  
+  'Sumatra Selatan': 'Sumatera Selatan',
+  'Sumsel': 'Sumatera Selatan',
+  'Sumatera Selatan': 'Sumatera Selatan',
+  'SUMSEL': 'Sumatera Selatan',
+  'Sum Sel': 'Sumatera Selatan',
+  
+  // NTT variations - ENHANCED  
+  'NTT': 'Nusa Tenggara Timur',
+  'Nusa Tenggara Timur': 'Nusa Tenggara Timur',
+  'NT Timur': 'Nusa Tenggara Timur',
+  'NusaTenggaraTimur': 'Nusa Tenggara Timur',
+  'Nusa_Tenggara_Timur': 'Nusa Tenggara Timur',
+  'NUSA TENGGARA TIMUR': 'Nusa Tenggara Timur',
+  'nusa tenggara timur': 'Nusa Tenggara Timur',
+  
+  // NTB variations
+  'NTB': 'Nusa Tenggara Barat',
+  'Nusa Tenggara Barat': 'Nusa Tenggara Barat',
+  'NT Barat': 'Nusa Tenggara Barat',
+  'NusaTenggaraBarat': 'Nusa Tenggara Barat',
+  'Nusa_Tenggara_Barat': 'Nusa Tenggara Barat',
+  'NUSA TENGGARA BARAT': 'Nusa Tenggara Barat',
+  'nusa tenggara barat': 'Nusa Tenggara Barat',
+  
+  // Kalimantan variations
+  'Kaltim': 'Kalimantan Timur',
+  'Kalbar': 'Kalimantan Barat',
+  'Kalteng': 'Kalimantan Tengah',
+  'Kalsel': 'Kalimantan Selatan',
+  'Kaltara': 'Kalimantan Utara',
+  'KALTIM': 'Kalimantan Timur',
+  'KALBAR': 'Kalimantan Barat',
+  'KALTENG': 'Kalimantan Tengah',
+  'KALSEL': 'Kalimantan Selatan',
+  'KALTARA': 'Kalimantan Utara',
+  
+  // Sulawesi variations  
+  'Sulut': 'Sulawesi Utara',
+  'Sulteng': 'Sulawesi Tengah',
+  'Sulsel': 'Sulawesi Selatan',
+  'Sultra': 'Sulawesi Tenggara',
+  'Sulbar': 'Sulawesi Barat',
+  'SULUT': 'Sulawesi Utara',
+  'SULTENG': 'Sulawesi Tengah',
+  'SULSEL': 'Sulawesi Selatan',
+  'SULTRA': 'Sulawesi Tenggara',
+  'SULBAR': 'Sulawesi Barat',
+  
+  // Other variations
+  'Babel': 'Bangka Belitung',
+  'Kepri': 'Kepulauan Riau',
+  'BABEL': 'Bangka Belitung',
+  'KEPRI': 'Kepulauan Riau',
+  'Bangka_Belitung': 'Bangka Belitung',
+  'Kepulauan_Riau': 'Kepulauan Riau',
+  
+  // Handle generic names by mapping to most common/representative
+  'Sulawesi': 'Sulawesi Selatan',
+  'Kalimantan': 'Kalimantan Timur', // Map generic Kalimantan to Kaltim
+  
+  // Handle exact matches (passthrough) - Updated with all provinces
+  'Aceh': 'Aceh',
+  'Sumatera Utara': 'Sumatera Utara',
+  'Sumatera Barat': 'Sumatera Barat',
+  'Riau': 'Riau',
+  'Kepulauan Riau': 'Kepulauan Riau',
+  'Jambi': 'Jambi',
+  'Sumatera Selatan': 'Sumatera Selatan',
+  'Bangka Belitung': 'Bangka Belitung',
+  'Bengkulu': 'Bengkulu',
+  'Lampung': 'Lampung',
+  'DKI Jakarta': 'DKI Jakarta',
+  'Jawa Barat': 'Jawa Barat',
+  'Banten': 'Banten',
+  'Jawa Tengah': 'Jawa Tengah',
+  'DI Yogyakarta': 'DI Yogyakarta',
+  'Jawa Timur': 'Jawa Timur',
+  'Kalimantan Barat': 'Kalimantan Barat',
+  'Kalimantan Tengah': 'Kalimantan Tengah',
+  'Kalimantan Selatan': 'Kalimantan Selatan',
+  'Kalimantan Timur': 'Kalimantan Timur',
+  'Kalimantan Utara': 'Kalimantan Utara',
+  'Sulawesi Utara': 'Sulawesi Utara',
+  'Sulawesi Tengah': 'Sulawesi Tengah',
+  'Sulawesi Selatan': 'Sulawesi Selatan',
+  'Sulawesi Tenggara': 'Sulawesi Tenggara',
+  'Gorontalo': 'Gorontalo',
+  'Sulawesi Barat': 'Sulawesi Barat',
+  'Bali': 'Bali',
+  'Nusa Tenggara Barat': 'Nusa Tenggara Barat',
+  'Nusa Tenggara Timur': 'Nusa Tenggara Timur',
+  'Maluku': 'Maluku',
+  'Maluku Utara': 'Maluku Utara',
+  'Papua': 'Papua',
+  'Papua Barat': 'Papua Barat',
+  'Papua Tengah': 'Papua Tengah',
+  'Papua Pegunungan': 'Papua Pegunungan',
+  'Papua Selatan': 'Papua Selatan',
+  'Papua Barat Daya': 'Papua Barat Daya'
+};
+
+// Get normalized province name with detailed logging
+const getNormalizedProvinceName = (provinceName: string): string => {
+  // Try exact match first
+  let normalized = provinceNameMapping[provinceName];
+  
+  // If not found, try case-insensitive search
+  if (!normalized) {
+    const lowerProvince = provinceName.toLowerCase();
+    const mappingEntries = Object.entries(provinceNameMapping);
+    
+    for (const [key, value] of mappingEntries) {
+      if (key.toLowerCase() === lowerProvince) {
+        normalized = value;
+        break;
+      }
+    }
+  }
+  
+  // If still not found, try partial matching for common cases
+  if (!normalized) {
+    const lowerProvince = provinceName.toLowerCase();
+    
+    // Special cases for partial matching
+    if (lowerProvince.includes('sumatera utara') || lowerProvince.includes('sumut') || lowerProvince.includes('sumatra utara')) {
+      normalized = 'Sumatera Utara';
+    } else if (lowerProvince.includes('ntt') || lowerProvince.includes('nusa tenggara timur')) {
+      normalized = 'Nusa Tenggara Timur';
+    } else if (lowerProvince.includes('ntb') || lowerProvince.includes('nusa tenggara barat')) {
+      normalized = 'Nusa Tenggara Barat';
+    } else {
+      normalized = provinceName; // fallback to original
+    }
+  }
+  
+  // Enhanced logging
+  if (provinceName !== normalized) {
+    console.log(`🔄 Province mapping: "${provinceName}" → "${normalized}"`);
+  }
+  
+  // Check if final result has coordinates
+  if (!provinceCoordinates[normalized]) {
+    console.error(`❌ MISSING COORDINATES for: "${normalized}" (original: "${provinceName}")`);
+    console.log('📍 Available provinces:', Object.keys(provinceCoordinates).sort());
+    
+    // Suggest possible matches
+    const availableProvinces = Object.keys(provinceCoordinates);
+    const possibleMatches = availableProvinces.filter(p => 
+      p.toLowerCase().includes(provinceName.toLowerCase().substring(0, 4)) ||
+      provinceName.toLowerCase().includes(p.toLowerCase().substring(0, 4))
+    );
+    if (possibleMatches.length > 0) {
+      console.log(`💡 Possible matches for "${provinceName}":`, possibleMatches);
+    }
+  } else {
+    console.log(`✅ Successfully mapped: "${provinceName}" → "${normalized}"`);
+  }
+  
+  return normalized;
+};
+
+// Custom marker icon - improved sizing and transparency
 const createCustomIcon = (count: number, color: string) => {
-  const size = Math.max(20, Math.min(40, count * 2));
+  // More dramatic size differences
+  const baseSize = 30;
+  const maxSize = 70;
+  const minSize = 25;
+  
+  // Dynamic sizing based on count with better scaling
+  let size;
+  if (count <= 1) {
+    size = minSize;
+  } else if (count <= 5) {
+    size = baseSize;
+  } else if (count <= 10) {
+    size = baseSize + 12;
+  } else if (count <= 20) {
+    size = baseSize + 25;
+  } else {
+    size = Math.min(maxSize, baseSize + Math.min(35, count * 1.8));
+  }
+  
   return L.divIcon({
     html: `
       <div style="
-        background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);
+        background: linear-gradient(135deg, ${color}CC 0%, ${color}AA 100%);
         width: ${size}px;
         height: ${size}px;
         border-radius: 50%;
@@ -88,9 +333,11 @@ const createCustomIcon = (count: number, color: string) => {
         justify-content: center;
         color: white;
         font-weight: bold;
-        font-size: ${Math.max(10, size / 3)}px;
-        border: 2px solid white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        font-size: ${Math.max(10, size / 3.2)}px;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        opacity: 0.95;
+        transition: all 0.3s ease;
       ">${count}</div>
     `,
     className: 'custom-distribution-marker',
@@ -108,6 +355,87 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
   const [mapError, setMapError] = useState<string | null>(null);
   const [isMapLoading, setIsMapLoading] = useState(true);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  // Debug: Log all provinces in data on component mount/update
+  useEffect(() => {
+    if (data && data.length > 0) {
+      console.log('🗺️ === ENHANCED PROVINCE MAPPING DEBUG ===');
+      console.log(`📊 Total provinces in data: ${data.length}`);
+      console.log('📝 Raw province names from data:', data.map(item => `"${item.provinsi}"`));
+      
+      const mappingResults = data.map(item => {
+        const normalized = getNormalizedProvinceName(item.provinsi);
+        const hasCoordinates = !!provinceCoordinates[normalized];
+        return {
+          original: item.provinsi,
+          normalized,
+          hasCoordinates,
+          count: item.count,
+          coordinates: hasCoordinates ? provinceCoordinates[normalized] : null
+        };
+      });
+      
+      console.table(mappingResults);
+      
+      // Special check for Sumatera Utara and NTT
+      const sumutData = data.find(item => 
+        item.provinsi.toLowerCase().includes('sumatera utara') || 
+        item.provinsi.toLowerCase().includes('sumut') ||
+        item.provinsi.toLowerCase().includes('sumatra utara')
+      );
+      
+      const nttData = data.find(item => 
+        item.provinsi.toLowerCase().includes('ntt') || 
+        item.provinsi.toLowerCase().includes('nusa tenggara timur') ||
+        item.provinsi.toLowerCase().includes('nt timur')
+      );
+      
+      if (sumutData) {
+        console.log('🔍 FOUND Sumatera Utara data:', sumutData);
+        const normalizedSumut = getNormalizedProvinceName(sumutData.provinsi);
+        console.log('🎯 Sumatera Utara normalized to:', normalizedSumut);
+        console.log('📍 Sumatera Utara coordinates:', provinceCoordinates[normalizedSumut]);
+      } else {
+        console.warn('⚠️ NO Sumatera Utara data found in:', data.map(item => item.provinsi));
+      }
+      
+      if (nttData) {
+        console.log('🔍 FOUND NTT data:', nttData);
+        const normalizedNTT = getNormalizedProvinceName(nttData.provinsi);
+        console.log('🎯 NTT normalized to:', normalizedNTT);
+        console.log('📍 NTT coordinates:', provinceCoordinates[normalizedNTT]);
+      } else {
+        console.warn('⚠️ NO NTT data found in:', data.map(item => item.provinsi));
+      }
+      
+      const unmapped = mappingResults.filter(r => !r.hasCoordinates);
+      if (unmapped.length > 0) {
+        console.error(`❌ ${unmapped.length} provinces without coordinates:`);
+        unmapped.forEach(u => {
+          console.error(`   - "${u.original}" → "${u.normalized}" (${u.count} penerima)`);
+        });
+        
+        // Suggest fixes
+        console.log('💡 DEBUGGING SUGGESTIONS:');
+        unmapped.forEach(u => {
+          const suggestions = Object.keys(provinceCoordinates).filter(p => 
+            p.toLowerCase().includes(u.original.toLowerCase().substring(0, 3)) ||
+            u.original.toLowerCase().includes(p.toLowerCase().substring(0, 3))
+          );
+          if (suggestions.length > 0) {
+            console.log(`   - For "${u.original}": consider ${suggestions.join(', ')}`);
+          }
+        });
+      } else {
+        console.log('✅ All provinces successfully mapped!');
+      }
+      
+      // Show mapping statistics
+      const totalWithCoords = mappingResults.filter(r => r.hasCoordinates);
+      console.log(`📈 MAPPING STATS: ${totalWithCoords.length}/${data.length} provinces mapped successfully`);
+      console.log(`📊 Total penerima with coordinates: ${totalWithCoords.reduce((sum, r) => sum + r.count, 0)}`);
+    }
+  }, [data]);
 
   // Map ready handler with error handling
   const onMapReady = (mapInstance: L.Map) => {
@@ -227,6 +555,26 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 w-full overflow-hidden relative z-10">
+      {/* Add custom CSS for markers */}
+      <style>{`
+        .custom-distribution-marker {
+          cursor: pointer;
+        }
+        .custom-distribution-marker:hover div {
+          transform: scale(1.1);
+          opacity: 1 !important;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+        }
+        .leaflet-popup-content-wrapper {
+          border-radius: 8px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-tip {
+          background: white;
+          border-color: #e5e7eb;
+        }
+      `}</style>
+      
       {/* Header - Mobile Responsive */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
         <div className="min-w-0 flex-1">
@@ -318,21 +666,41 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
           
           {/* Distribution Markers */}
           {data.map((item, index) => {
-            const coordinates = provinceCoordinates[item.provinsi];
-            if (!coordinates) return null;
+            const normalizedName = getNormalizedProvinceName(item.provinsi);
+            const coordinates = provinceCoordinates[normalizedName];
+            
+            // Enhanced logging for missing coordinates
+            if (!coordinates) {
+              console.warn(`⚠️ SKIPPING MARKER: "${item.provinsi}" → "${normalizedName}" (${item.count} penerima)`);
+              console.log(`💡 Available coordinates for provinces starting with "${item.provinsi.substring(0, 3)}":`, 
+                Object.keys(provinceCoordinates).filter(p => p.toLowerCase().startsWith(item.provinsi.toLowerCase().substring(0, 3)))
+              );
+              return null;
+            }
+
+            // Enhanced logging for successful mapping
+            console.log(`🎯 RENDERING MARKER: "${item.provinsi}" → "${normalizedName}" at [${coordinates[0]}, ${coordinates[1]}] (${item.count} penerima)`);
 
             return (
               <Marker
-                key={index}
+                key={`${normalizedName}-${index}`} // Better key to avoid duplicates
                 position={coordinates}
                 icon={createCustomIcon(item.count, item.color || '#ef4444')}
               >
                 <Popup>
                   <div style={{ textAlign: 'center', padding: '8px' }}>
-                    <h3 style={{ margin: '0 0 8px 0', color: '#1f2937' }}>{item.provinsi}</h3>
+                    <h3 style={{ margin: '0 0 8px 0', color: '#1f2937' }}>{normalizedName}</h3>
                     <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
-                      📍 {item.count} penerima<br />
+                      📍 {item.count.toLocaleString('id-ID')} penerima<br />
                       📊 {item.percentage}% dari total distribusi
+                    </p>
+                    {item.provinsi !== normalizedName && (
+                      <p style={{ margin: '4px 0 0 0', color: '#9ca3af', fontSize: '12px' }}>
+                        Data asli: {item.provinsi}
+                      </p>
+                    )}
+                    <p style={{ margin: '4px 0 0 0', color: '#9ca3af', fontSize: '12px' }}>
+                      Koordinat: [{coordinates[0].toFixed(4)}, {coordinates[1].toFixed(4)}]
                     </p>
                   </div>
                 </Popup>
@@ -342,16 +710,23 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
         </MapContainer>
 
         {/* Legend Overlay - Mobile Responsive */}
-        <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-4 shadow-lg border z-[50] max-w-[140px] sm:max-w-none">
+        <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-4 shadow-lg border z-[50] max-w-[160px] sm:max-w-none">
           <div className="text-xs font-bold text-gray-700 mb-2 sm:mb-3">Keterangan Peta</div>
           <div className="space-y-1 sm:space-y-2">
             <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded-full shadow-sm flex-shrink-0"></div>
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded-full shadow-sm flex-shrink-0 opacity-90"></div>
               <span className="text-xs text-gray-600">Titik Distribusi</span>
             </div>
             <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0"></div>
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0 opacity-90"></div>
+                <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0 opacity-90"></div>
+                <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0 opacity-90"></div>
+              </div>
               <span className="text-xs text-gray-600">Ukuran = Jumlah</span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Hover untuk detail
             </div>
           </div>
         </div>
@@ -381,6 +756,118 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
           {data.length} titik distribusi
         </div>
       </div>
+
+      {/* Top 5 Provinces Table */}
+      {data.length > 0 && (
+        <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-4 sm:p-6 border border-blue-100">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+            Top 5 Provinsi Distribusi
+          </h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full bg-white rounded-lg shadow-sm border border-gray-200">
+              <thead>
+                <tr className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                    Ranking
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                    Provinsi
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                    Jumlah
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                    Persentase
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                    Visual
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {data.slice(0, 5).map((item, index) => (
+                  <tr 
+                    key={index}
+                    className={`hover:bg-blue-50 transition-colors ${
+                      index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                    }`}
+                  >
+                    <td className="px-3 sm:px-4 py-3">
+                      <div className="flex items-center">
+                        <div className={`
+                          w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm
+                          ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-500' : ''}
+                          ${index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' : ''}
+                          ${index === 2 ? 'bg-gradient-to-r from-amber-600 to-amber-700' : ''}
+                          ${index >= 3 ? 'bg-gradient-to-r from-blue-500 to-blue-600' : ''}
+                        `}>
+                          {index + 1}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3">
+                      <div className="text-sm sm:text-base font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">
+                        {item.provinsi}
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-center">
+                      <div className="text-sm sm:text-base font-bold text-blue-600">
+                        {item.count.toLocaleString('id-ID')}
+                      </div>
+                      <div className="text-xs text-gray-500">penerima</div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-center">
+                      <div className="text-sm sm:text-base font-semibold text-green-600">
+                        {item.percentage}%
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3">
+                      <div className="flex items-center justify-center">
+                        <div className="w-full max-w-[60px] sm:max-w-[100px] bg-gray-200 rounded-full h-2 sm:h-3">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 sm:h-3 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${Math.min(100, (item.percentage / data[0].percentage) * 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Summary Stats */}
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-blue-100 text-center">
+              <div className="text-lg sm:text-xl font-bold text-blue-600">
+                {data.slice(0, 5).reduce((sum, item) => sum + item.count, 0).toLocaleString('id-ID')}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Top 5</div>
+            </div>
+            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-green-100 text-center">
+              <div className="text-lg sm:text-xl font-bold text-green-600">
+                {data.slice(0, 5).reduce((sum, item) => sum + item.percentage, 0).toFixed(1)}%
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600">% Top 5</div>
+            </div>
+            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-purple-100 text-center">
+              <div className="text-lg sm:text-xl font-bold text-purple-600">
+                {data.length}
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Provinsi</div>
+            </div>
+            <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-orange-100 text-center">
+              <div className="text-lg sm:text-xl font-bold text-orange-600">
+                {((data.slice(0, 5).reduce((sum, item) => sum + item.count, 0) / totalPenerima) * 100).toFixed(1)}%
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600">Kontribusi</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -153,21 +153,48 @@ export const saveMuzakkiData = async (records: Muzakki[]): Promise<{ success: nu
     // Process records one by one to handle duplicates
     for (const record of records) {
       try {
-        // Check if record already exists (nama + telepon combination)
-        const { data: existing, error: checkError } = await supabase
-          .from(TABLES.MUZAKKI)
-          .select('id')
-          .eq('nama_muzakki', record.nama_muzakki)
-          .eq('telepon', record.telepon || '')
-          .single();
+        // Safer duplicate check with better error handling
+        let isDuplicate = false;
+        try {
+          const { data: existing, error: checkError } = await supabase
+            .from(TABLES.MUZAKKI)
+            .select('id')
+            .eq('nama_muzakki', record.nama_muzakki)
+            .eq('telepon', record.telepon || '')
+            .limit(1); // Add explicit limit to reduce query complexity
 
-        if (checkError && checkError.code !== 'PGRST116') {
-          // PGRST116 = no rows returned, which is what we want
-          errors.push(checkError);
-          continue;
+          if (checkError) {
+            if (checkError.code === 'PGRST116') {
+              // PGRST116 = no rows returned, which means no duplicate
+              console.log(`✅ No duplicate found for: ${record.nama_muzakki}`);
+              isDuplicate = false;
+            } else {
+              // Other error - try alternative duplicate checking method
+              console.warn(`⚠️ Standard duplicate check failed, trying alternative method:`, checkError.message);
+              
+              // Alternative: Use simple name-only check which might be more reliable
+              const { data: altExisting, error: altCheckError } = await supabase
+                .from(TABLES.MUZAKKI)
+                .select('id')
+                .eq('nama_muzakki', record.nama_muzakki)
+                .limit(1);
+                
+              if (altCheckError) {
+                console.warn(`⚠️ Alternative duplicate check also failed, proceeding with insert:`, altCheckError.message);
+                isDuplicate = false;
+              } else {
+                isDuplicate = altExisting && altExisting.length > 0;
+              }
+            }
+          } else {
+            isDuplicate = existing && existing.length > 0;
+          }
+        } catch (duplicateCheckError) {
+          console.warn(`⚠️ Duplicate check exception, proceeding with insert:`, duplicateCheckError);
+          isDuplicate = false;
         }
 
-        if (existing) {
+        if (isDuplicate) {
           // Record already exists - skip as duplicate
           duplicateCount++;
           console.log(`⚠️ Duplicate skipped: ${record.nama_muzakki} (${record.telepon})`);
@@ -204,24 +231,63 @@ export const saveDistribusiData = async (records: Distribusi[]): Promise<{ succe
     let duplicateCount = 0;
     const errors: any[] = [];
 
+    console.log(`📊 Starting to save ${records.length} distribusi records`);
+
     // Process records one by one to handle duplicates
     for (const record of records) {
       try {
-        // Check if record already exists (nama + alamat combination)
-        const { data: existing, error: checkError } = await supabase
-          .from(TABLES.DISTRIBUSI)
-          .select('id')
-          .eq('nama_penerima', record.nama_penerima)
-          .eq('alamat_penerima', record.alamat_penerima)
-          .single();
-
-        if (checkError && checkError.code !== 'PGRST116') {
-          // PGRST116 = no rows returned, which is what we want
-          errors.push(checkError);
+        console.log(`🔍 Processing record: ${record.nama_penerima} - ${record.alamat_penerima}`);
+        
+        // Validate record before checking duplicates
+        if (!record.nama_penerima || !record.alamat_penerima) {
+          console.error(`❌ Invalid record - missing required fields:`, record);
+          errors.push({ message: `Missing required fields: nama_penerima or alamat_penerima`, record });
           continue;
         }
 
-        if (existing) {
+        // Safer duplicate check with better error handling
+        let isDuplicate = false;
+        try {
+          const { data: existing, error: checkError } = await supabase
+            .from(TABLES.DISTRIBUSI)
+            .select('id')
+            .eq('nama_penerima', record.nama_penerima)
+            .eq('alamat_penerima', record.alamat_penerima)
+            .limit(1); // Add explicit limit to reduce query complexity
+
+          if (checkError) {
+            if (checkError.code === 'PGRST116') {
+              // PGRST116 = no rows returned, which means no duplicate
+              console.log(`✅ No duplicate found for: ${record.nama_penerima}`);
+              isDuplicate = false;
+            } else {
+              // Other error - try alternative duplicate checking method
+              console.warn(`⚠️ Standard duplicate check failed, trying alternative method:`, checkError.message);
+              
+              // Alternative: Use text search which might be more reliable
+              const { data: altExisting, error: altCheckError } = await supabase
+                .from(TABLES.DISTRIBUSI)
+                .select('id')
+                .textSearch('nama_penerima', record.nama_penerima.replace(/['"]/g, ''))
+                .textSearch('alamat_penerima', record.alamat_penerima.replace(/['"]/g, ''))
+                .limit(1);
+                
+              if (altCheckError) {
+                console.warn(`⚠️ Alternative duplicate check also failed, proceeding with insert:`, altCheckError.message);
+                isDuplicate = false;
+              } else {
+                isDuplicate = altExisting && altExisting.length > 0;
+              }
+            }
+          } else {
+            isDuplicate = existing && existing.length > 0;
+          }
+        } catch (duplicateCheckError) {
+          console.warn(`⚠️ Duplicate check exception, proceeding with insert:`, duplicateCheckError);
+          isDuplicate = false;
+        }
+
+        if (isDuplicate) {
           // Record already exists - skip as duplicate
           duplicateCount++;
           console.log(`⚠️ Duplicate skipped: ${record.nama_penerima} (${record.alamat_penerima})`);
@@ -229,25 +295,40 @@ export const saveDistribusiData = async (records: Distribusi[]): Promise<{ succe
         }
 
         // Record doesn't exist - insert it
+        console.log(`✅ Inserting new record: ${record.nama_penerima}`);
+        
+        // Clean the record one more time before insertion
+        const insertRecord = {
+          ...record,
+          nama_penerima: record.nama_penerima.trim(),
+          alamat_penerima: record.alamat_penerima.trim(),
+          // Ensure tanggal_distribusi is in correct format
+          tanggal_distribusi: record.tanggal_distribusi || new Date().toISOString().split('T')[0]
+        };
+        
         const { data, error } = await supabase
           .from(TABLES.DISTRIBUSI)
-          .insert([record])
+          .insert([insertRecord])
           .select();
 
         if (error) {
-          errors.push(error);
+          console.error(`❌ Insert error for ${record.nama_penerima}:`, error);
+          console.error(`❌ Record data:`, insertRecord);
+          errors.push({ message: `Insert failed: ${error.message}`, record: insertRecord, error });
         } else if (data && data.length > 0) {
           successCount++;
           console.log(`✅ Inserted: ${record.nama_penerima}`);
         }
       } catch (err) {
-        errors.push(err);
+        console.error(`❌ Unexpected error processing ${record.nama_penerima}:`, err);
+        errors.push({ message: `Unexpected error: ${err}`, record, error: err });
       }
     }
 
+    console.log(`📊 Distribusi save complete: ${successCount} success, ${duplicateCount} duplicates, ${errors.length} errors`);
     return { success: successCount, duplicates: duplicateCount, errors };
   } catch (error) {
-    console.error('Error saving distribusi data:', error);
+    console.error('❌ Error saving distribusi data:', error);
     return { success: 0, duplicates: 0, errors: [error] };
   }
 };

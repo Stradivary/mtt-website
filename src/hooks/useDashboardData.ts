@@ -182,23 +182,24 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
         }
       });
 
-      // Calculate total hewan and nilai qurban
+      // Calculate total hewan by summing jumlah_hewan and total nilai qurban
       let totalHewan = 0;
       let totalNilai = 0;
       muzakkiResult.data?.forEach(item => {
-        totalHewan += item.jumlah_hewan || 1;
+        totalHewan += item.jumlah_hewan || 1; // Sum jumlah_hewan instead of counting
         totalNilai += item.nilai_qurban || 0;
       });
 
       const manualStats = {
         total_muzakki: muzakkiCount,
-        total_hewan: totalHewan,
+        total_hewan: totalHewan, // Now this is the sum of jumlah_hewan
         total_penerima: distribusiCount,
         kabupaten_coverage: uniqueKabupaten.size,
         total_nilai_qurban: totalNilai,
       };
 
       console.log('✅ Manual stats calculated:', manualStats);
+      console.log('🐄 Total hewan (sum of jumlah_hewan):', totalHewan);
       setStats(manualStats);
       
       // Calculate advanced stats manually
@@ -323,6 +324,7 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
         .slice(0, 10); // Increase to top 10
 
       console.log('🗺️ Provinsi breakdown calculated:', provinsiBreakdown);
+      console.log('📍 Nama-nama provinsi dalam data:', provinsiBreakdown.map(p => p.provinsi));
 
       // Calculate daily progress from actual data
       const today = new Date();
