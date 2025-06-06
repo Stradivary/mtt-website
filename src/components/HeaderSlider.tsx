@@ -240,16 +240,16 @@ const HeaderSlider: React.FC<HeaderSliderProps> = ({ className = '' }) => {
               {/* Mobile Slide Counter */}
               <div className="absolute top-4 right-4 z-20 bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium">
                 {currentSlide + 1} / {slides.length}
-              </div>
+          </div>
 
               {/* Featured Badge on Image */}
-              {currentSlideData.featured && (
+                {currentSlideData.featured && (
                 <div className="absolute top-4 left-4 z-20 inline-flex items-center bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium text-white">
-                  <span>🌟 Program Utama</span>
-                </div>
-              )}
+                    <span>🌟 Program Utama</span>
+                  </div>
+                )}
             </div>
-
+                
             {/* Mobile Content Section - Below Image */}
             <div className={`bg-gradient-to-r ${currentSlideData.bgGradient} text-white px-4 py-6 sm:py-8 transition-all duration-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
               <div className="max-w-lg mx-auto text-center">
@@ -358,82 +358,82 @@ const HeaderSlider: React.FC<HeaderSliderProps> = ({ className = '' }) => {
                 {/* Right Image - Takes up 8 columns, full image visibility */}
                 <div className={`lg:col-span-8 transition-all duration-500 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
                   <div className="desktop-image-container">
-                    <img
-                      src={currentSlideData.image}
-                      alt={currentSlideData.title}
+                  <img
+                    src={currentSlideData.image}
+                    alt={currentSlideData.title}
                       className="desktop-image w-full h-auto"
-                    />
-                    {/* Image overlay for featured slide */}
-                    {currentSlideData.featured && (
+                  />
+                  {/* Image overlay for featured slide */}
+                  {currentSlideData.featured && (
                       <div className="absolute -top-2 -right-2 bg-yellow-400 text-gray-900 rounded-full p-3 shadow-xl z-10">
-                        <span className="text-2xl">🕌</span>
-                      </div>
-                    )}
-                  </div>
+                      <span className="text-2xl">🕌</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Desktop Navigation Controls */}
-            <button
-              onClick={handlePrevSlide}
-              disabled={isTransitioning}
+          <button
+            onClick={handlePrevSlide}
+            disabled={isTransitioning}
               className="absolute left-6 top-1/2 transform -translate-y-1/2 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 active:bg-white/40 text-white p-3 rounded-full transition-all duration-300 disabled:opacity-50 touch-manipulation"
-              aria-label="Previous slide"
-            >
+            aria-label="Previous slide"
+          >
               <ChevronLeft className="w-6 h-6" />
-            </button>
+          </button>
 
-            <button
-              onClick={handleNextSlide}
-              disabled={isTransitioning}
+          <button
+            onClick={handleNextSlide}
+            disabled={isTransitioning}
               className="absolute right-6 top-1/2 transform -translate-y-1/2 z-20 bg-white/20 backdrop-blur-sm hover:bg-white/30 active:bg-white/40 text-white p-3 rounded-full transition-all duration-300 disabled:opacity-50 touch-manipulation"
-              aria-label="Next slide"
-            >
+            aria-label="Next slide"
+          >
               <ChevronRight className="w-6 h-6" />
-            </button>
+          </button>
 
             {/* Desktop Bottom Controls */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex items-center space-x-6">
-              {/* Slide Indicators */}
-              <div className="flex space-x-2">
-                {slides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => goToSlide(index)}
+            {/* Slide Indicators */}
+            <div className="flex space-x-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
                     className={`w-4 h-4 rounded-full transition-all duration-300 touch-manipulation ${
-                      index === currentSlide 
-                        ? 'bg-white scale-125' 
+                    index === currentSlide 
+                      ? 'bg-white scale-125' 
                         : 'bg-white/50 hover:bg-white/75 active:bg-white/90'
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              {/* Play/Pause Button */}
-              <button
-                onClick={togglePlayPause}
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 active:bg-white/40 text-white p-3 rounded-full transition-all duration-300 touch-manipulation"
-                aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
-              >
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-              </button>
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
             </div>
+
+            {/* Play/Pause Button */}
+            <button
+              onClick={togglePlayPause}
+                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 active:bg-white/40 text-white p-3 rounded-full transition-all duration-300 touch-manipulation"
+              aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
+            >
+                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+            </button>
+          </div>
 
             {/* Desktop Slide Counter */}
             <div className="absolute top-8 right-8 z-20 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-base font-medium">
-              {currentSlide + 1} / {slides.length}
-            </div>
+            {currentSlide + 1} / {slides.length}
+          </div>
 
             {/* Desktop Progress Bar */}
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white/20 z-10">
-              <div 
-                key={progressKey}
-                className={`h-full bg-white transition-all duration-300 ${
-                  isPlaying ? 'progress-animate' : 'w-0'
-                }`}
-              />
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white/20 z-10">
+            <div 
+              key={progressKey}
+              className={`h-full bg-white transition-all duration-300 ${
+                isPlaying ? 'progress-animate' : 'w-0'
+              }`}
+            />
             </div>
           </div>
         </div>

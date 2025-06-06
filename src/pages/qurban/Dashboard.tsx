@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [animalBreakdown, setAnimalBreakdown] = useState<Record<string, number>>({});
   const [mitraCount, setMitraCount] = useState(0);
   const [debugMode, setDebugMode] = useState(false); // Debug mode toggle
+  const [totalDagingPaket, setTotalDagingPaket] = useState(0); // Add total daging paket state
   
   const { 
     stats, 
@@ -38,6 +39,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchAnimalBreakdown();
     fetchMitraCount();
+    fetchTotalDagingPaket(); // Add total daging calculation
   }, [refreshTrigger]);
 
   const fetchAnimalBreakdown = async () => {
@@ -122,12 +124,42 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTotalDagingPaket = async () => {
+    try {
+      console.log('📦 Fetching total daging paket...');
+      const { supabase } = await import('../../lib/supabase');
+      
+      const { data: distribusi, error } = await supabase
+        .from('distribusi')
+        .select('jumlah_daging')
+        .order('created_at', { ascending: false })
+        .limit(10000);
+
+      if (error) {
+        console.error('❌ Error fetching distribusi data:', error);
+        return;
+      }
+
+      if (distribusi && distribusi.length > 0) {
+        const totalDaging = distribusi.reduce((sum, item) => sum + (item.jumlah_daging || 1), 0);
+        console.log('✅ Total daging paket calculated:', totalDaging);
+        setTotalDagingPaket(totalDaging);
+      } else {
+        console.log('⚠️ No distribusi data found');
+        setTotalDagingPaket(0);
+      }
+    } catch (error) {
+      console.error('❌ Error calculating total daging paket:', error);
+    }
+  };
+
   const handleRefresh = () => {
     console.log('🔄 Manual refresh initiated from Dashboard');
     refreshData();
     setRefreshTrigger(prev => prev + 1);
     fetchAnimalBreakdown();
     fetchMitraCount();
+    fetchTotalDagingPaket(); // Refresh total daging
   };
 
   const handleHardRefresh = async () => {
@@ -237,15 +269,15 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen pt-16 sm:pt-20 bg-gray-50 main-content">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 dashboard-container">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 dashboard-container">
         
         {/* Header - Mobile Responsive */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <div className="flex items-center space-x-4 min-w-0">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
               <Link 
                 to="/service" 
-                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors touch-manipulation"
+                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors touch-manipulation text-sm sm:text-base"
               >
                 <ArrowLeft className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span className="truncate">Kembali ke Layanan</span>
@@ -263,8 +295,8 @@ const Dashboard = () => {
                 <div className="flex items-center space-x-1 sm:space-x-2">
                   <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : error ? 'bg-red-400' : 'bg-green-400'}`}></div>
                   <span>{loading ? 'Loading...' : error ? 'Error' : 'Live'}</span>
-                </div>
-
+              </div>
+              
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
                   className={`px-2 py-1 rounded-full text-xs transition-colors touch-manipulation ${
@@ -285,25 +317,25 @@ const Dashboard = () => {
                   🐛
                 </button>
               </div>
-              
+
               {/* Action Buttons - Mobile Responsive */}
               <div className="flex items-center justify-center space-x-2 sm:space-x-3">
-                <button
-                  onClick={handleExportData}
+              <button
+                onClick={handleExportData}
                   className="bg-orange-500 hover:bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
-                >
+              >
                   <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Export</span>
-                </button>
+                <span>Export</span>
+              </button>
 
-                <button
-                  onClick={handleRefresh}
-                  disabled={loading}
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
                   className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
-                >
+              >
                   <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
-                  <span>Refresh</span>
-                </button>
+                <span>Refresh</span>
+              </button>
 
                 <button
                   onClick={handleHardRefresh}
@@ -317,11 +349,11 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="mt-4 sm:mt-6">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+          <div className="mt-3 sm:mt-4 lg:mt-6">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 leading-tight">
               Dashboard Qurban MTT 1446H
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-2 leading-relaxed">
+            <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1 sm:mt-2 leading-relaxed">
               Monitoring distribusi qurban secara real-time di seluruh Indonesia
             </p>
           </div>
@@ -331,75 +363,78 @@ const Dashboard = () => {
         <DebugInfo />
 
         {/* 1. Statistics Cards */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <StatsCards 
             stats={stats} 
             loading={loading}
             animalBreakdown={animalBreakdown}
             mitraCount={mitraCount}
+            totalDagingPaket={totalDagingPaket}
           />
         </div>
 
         {/* 2. Indonesia Map - Auto-responsive */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           {chartData?.provinsiBreakdown && (
-            <IndonesiaMap 
-              data={chartData.provinsiBreakdown}
-              totalPenerima={stats?.total_penerima || 0}
-              kabupatenCoverage={stats?.kabupaten_coverage || 0}
-            />
+          <IndonesiaMap 
+            data={chartData.provinsiBreakdown}
+            totalPenerima={stats?.total_penerima || 0}
+            kabupatenCoverage={stats?.kabupaten_coverage || 0}
+            totalDagingPaket={totalDagingPaket}
+          />
           )}
         </div>
 
-        {/* 3. Quick Statistics - Moved from side to full width */}
-        <div className="mb-6 sm:mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 w-full overflow-hidden responsive-card">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">
-              Ringkasan Cepat
-            </h3>
-            
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
-              <div className="flex flex-col items-center justify-center p-3 bg-blue-50 rounded-lg">
-                <span className="text-base sm:text-lg font-bold text-blue-600">
-                  {stats?.total_muzakki || 0}
-                </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Pequrban</span>
+        {/* 3. Quick Statistics - Mobile optimized */}
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-3 sm:p-4 lg:p-6 w-full overflow-hidden responsive-card">
+            <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 lg:mb-6">
+                Ringkasan Cepat
+              </h3>
+              
+            {/* Mobile optimized grid - 2 columns on mobile, 5 on larger screens */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-blue-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-blue-600">
+                    {stats?.total_muzakki || 0}
+                  </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Total Pequrban</span>
               </div>
               
-              <div className="flex flex-col items-center justify-center p-3 bg-green-50 rounded-lg">
-                <span className="text-base sm:text-lg font-bold text-green-600">
-                  {stats?.total_penerima || 0}
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-green-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-green-600">
+                  {Math.round(totalDagingPaket)}
                 </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Penerima</span>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center p-3 bg-purple-50 rounded-lg">
-                <span className="text-base sm:text-lg font-bold text-purple-600">
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Total Paket</span>
+                </div>
+                
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-purple-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-purple-600">
                   {stats?.kabupaten_coverage || 0}
-                </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Kab/Kota</span>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center p-3 bg-orange-50 rounded-lg">
-                <span className="text-base sm:text-lg font-bold text-orange-600">
-                  {stats?.total_penerima || 0}
-                </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Paket Distribusi</span>
-              </div>
-
-              <div className="flex flex-col items-center justify-center p-3 bg-indigo-50 rounded-lg">
-                <span className="text-base sm:text-lg font-bold text-indigo-600">
+                  </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Kab/Kota</span>
+                </div>
+                
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-orange-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-orange-600">
+                  {Math.round(chartData?.provinsiBreakdown?.reduce((sum, item) => sum + (item.total_daging || item.count || 0), 0) || 0)}
+                  </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Paket Distribusi</span>
+                </div>
+                
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-indigo-50 rounded-md sm:rounded-lg col-span-2 sm:col-span-1">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-indigo-600">
                   {mitraCount || 0}
-                </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center">Total Mitra</span>
+                  </span>
+                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Total Mitra</span>
               </div>
-            </div>
+                </div>
 
-            {/* Animal breakdown if available */}
-            {Object.keys(animalBreakdown).length > 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-3">Breakdown Jenis Hewan</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {/* Animal breakdown if available - Mobile optimized */}
+                {Object.keys(animalBreakdown).length > 0 && (
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
+                <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Breakdown Jenis Hewan</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {Object.entries(animalBreakdown)
                     .sort(([a], [b]) => {
                       // Sort by custom order: Sapi, Sapi 1/7, Domba
@@ -409,24 +444,24 @@ const Dashboard = () => {
                       return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
                     })
                     .map(([jenis, count]) => (
-                    <div key={jenis} className="flex justify-between items-center text-xs sm:text-sm p-2 bg-gray-50 rounded">
-                      <span className="text-gray-600 truncate mr-2">{jenis}</span>
+                    <div key={jenis} className="flex justify-between items-center text-xs sm:text-sm p-1.5 sm:p-2 bg-gray-50 rounded">
+                      <span className="text-gray-600 truncate mr-1 sm:mr-2">{jenis}</span>
                       <span className="font-medium flex-shrink-0">{count}</span>
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
               </div>
             )}
           </div>
         </div>
 
         {/* 4. Distribution Table */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <DistributionTable refreshTrigger={refreshTrigger} />
         </div>
 
         {/* 5. Activity Feed - Moved to bottom */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <ActivityFeed 
             activities={recentActivities} 
             loading={loading}

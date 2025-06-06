@@ -22,6 +22,7 @@ interface IndonesiaMapProps {
   data: ProvinsiData[];
   totalPenerima: number;
   kabupatenCoverage: number;
+  totalDagingPaket?: number; // Add optional prop for total daging calculation
 }
 
 // Component to handle map controls and error detection
@@ -34,7 +35,7 @@ const MapController = ({ onMapReady, onError }: {
   useEffect(() => {
     if (map) {
       try {
-        onMapReady(map);
+      onMapReady(map);
         
         // Check for tile loading errors
         map.on('tileerror', (e) => {
@@ -128,26 +129,22 @@ const provinceNameMapping: Record<string, string> = {
   // Sumatera variations - ENHANCED
   'Sumatra Utara': 'Sumatera Utara',
   'Sumut': 'Sumatera Utara',
-  'Sumatera Utara': 'Sumatera Utara',
   'SUMUT': 'Sumatera Utara',
   'Sum Ut': 'Sumatera Utara',
   'Sumatra_Utara': 'Sumatera Utara',
   
   'Sumatra Barat': 'Sumatera Barat',
   'Sumbar': 'Sumatera Barat',
-  'Sumatera Barat': 'Sumatera Barat',
   'SUMBAR': 'Sumatera Barat',
   'Sum Bar': 'Sumatera Barat',
   
   'Sumatra Selatan': 'Sumatera Selatan',
   'Sumsel': 'Sumatera Selatan',
-  'Sumatera Selatan': 'Sumatera Selatan',
   'SUMSEL': 'Sumatera Selatan',
   'Sum Sel': 'Sumatera Selatan',
   
   // NTT variations - ENHANCED  
   'NTT': 'Nusa Tenggara Timur',
-  'Nusa Tenggara Timur': 'Nusa Tenggara Timur',
   'NT Timur': 'Nusa Tenggara Timur',
   'NusaTenggaraTimur': 'Nusa Tenggara Timur',
   'Nusa_Tenggara_Timur': 'Nusa Tenggara Timur',
@@ -156,7 +153,6 @@ const provinceNameMapping: Record<string, string> = {
   
   // NTB variations
   'NTB': 'Nusa Tenggara Barat',
-  'Nusa Tenggara Barat': 'Nusa Tenggara Barat',
   'NT Barat': 'Nusa Tenggara Barat',
   'NusaTenggaraBarat': 'Nusa Tenggara Barat',
   'Nusa_Tenggara_Barat': 'Nusa Tenggara Barat',
@@ -302,23 +298,27 @@ const getNormalizedProvinceName = (provinceName: string): string => {
 
 // Custom marker icon - improved sizing and transparency
 const createCustomIcon = (count: number, color: string) => {
-  // More dramatic size differences
-  const baseSize = 30;
-  const maxSize = 70;
-  const minSize = 25;
+  // More dramatic size differences - Enhanced for better proportionality
+  const baseSize = 25;
+  const maxSize = 80;
+  const minSize = 20;
   
-  // Dynamic sizing based on count with better scaling
+  // Much more dramatic sizing based on count with better scaling
   let size;
   if (count <= 1) {
-    size = minSize;
-  } else if (count <= 5) {
-    size = baseSize;
+    size = minSize; // 20px
+  } else if (count <= 3) {
+    size = baseSize; // 25px
   } else if (count <= 10) {
-    size = baseSize + 12;
-  } else if (count <= 20) {
-    size = baseSize + 25;
+    size = baseSize + 10; // 35px
+  } else if (count <= 25) {
+    size = baseSize + 20; // 45px
+  } else if (count <= 50) {
+    size = baseSize + 30; // 55px
+  } else if (count <= 100) {
+    size = baseSize + 40; // 65px
   } else {
-    size = Math.min(maxSize, baseSize + Math.min(35, count * 1.8));
+    size = Math.min(maxSize, baseSize + 50 + Math.floor(count / 20)); // 75px+ scaling
   }
   
   return L.divIcon({
@@ -333,7 +333,7 @@ const createCustomIcon = (count: number, color: string) => {
         justify-content: center;
         color: white;
         font-weight: bold;
-        font-size: ${Math.max(10, size / 3.2)}px;
+        font-size: ${Math.max(10, size / 3.5)}px;
         border: 3px solid white;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         opacity: 0.95;
@@ -349,7 +349,8 @@ const createCustomIcon = (count: number, color: string) => {
 const IndonesiaMap: React.FC<IndonesiaMapProps> = ({ 
   data, 
   totalPenerima, 
-  kabupatenCoverage 
+  kabupatenCoverage,
+  totalDagingPaket = 0 // Default value
 }) => {
   const [map, setMap] = useState<L.Map | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -545,7 +546,7 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
           </button>
         )}
       </div>
-    </div>
+        </div>
   );
 
   // If there's a persistent error, show fallback
@@ -691,7 +692,7 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
                   <div style={{ textAlign: 'center', padding: '8px' }}>
                     <h3 style={{ margin: '0 0 8px 0', color: '#1f2937' }}>{normalizedName}</h3>
                     <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
-                      📍 {item.count.toLocaleString('id-ID')} penerima<br />
+                      📍 {item.count.toLocaleString('id-ID')} paket daging<br />
                       📊 {item.percentage}% dari total distribusi
                     </p>
                     {item.provinsi !== normalizedName && (
@@ -708,42 +709,6 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
             );
           })}
         </MapContainer>
-
-        {/* Legend Overlay - Mobile Responsive */}
-        <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-4 shadow-lg border z-[50] max-w-[160px] sm:max-w-none">
-          <div className="text-xs font-bold text-gray-700 mb-2 sm:mb-3">Keterangan Peta</div>
-          <div className="space-y-1 sm:space-y-2">
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded-full shadow-sm flex-shrink-0 opacity-90"></div>
-              <span className="text-xs text-gray-600">Titik Distribusi</span>
-            </div>
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0 opacity-90"></div>
-                <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0 opacity-90"></div>
-                <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-red-600 rounded-full flex-shrink-0 opacity-90"></div>
-              </div>
-              <span className="text-xs text-gray-600">Ukuran = Jumlah</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              Hover untuk detail
-            </div>
-          </div>
-        </div>
-
-        {/* Statistics Overlay - Mobile Responsive */}
-        <div className="absolute bottom-2 sm:bottom-4 right-2 sm:right-4 bg-white/95 backdrop-blur-sm rounded-lg p-2 sm:p-4 shadow-lg border z-[50] max-w-[100px] sm:max-w-none">
-          <div className="text-center">
-            <div className="text-lg sm:text-2xl font-bold text-blue-600 mb-1">
-              {totalPenerima.toLocaleString('id-ID')}
-            </div>
-            <div className="text-xs text-gray-600 mb-1 sm:mb-2">Total</div>
-            <div className="text-sm sm:text-lg font-semibold text-green-600">
-              {kabupatenCoverage}
-            </div>
-            <div className="text-xs text-gray-600">Kab</div>
-          </div>
-        </div>
       </div>
 
       {/* Map Info - Mobile Responsive */}
@@ -754,6 +719,91 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
         </div>
         <div className="text-blue-600 font-medium text-center sm:text-right">
           {data.length} titik distribusi
+        </div>
+      </div>
+
+      {/* Map Legend Card - Outside map for better mobile visibility */}
+      <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-100">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+          Keterangan Peta
+        </h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Legend Items */}
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-blue-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-6 h-6 bg-red-500 rounded-full shadow-sm opacity-90"></div>
+              <span className="text-sm font-medium text-gray-700">Titik Distribusi</span>
+            </div>
+            <p className="text-xs text-gray-600">Lokasi penyaluran daging qurban</p>
+          </div>
+          
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-green-100">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="flex space-x-1">
+                <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded-full opacity-90"></div>
+                <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-red-600 rounded-full opacity-90"></div>
+                <div className="w-5 h-5 bg-gradient-to-r from-red-400 to-red-600 rounded-full opacity-90"></div>
+              </div>
+              <span className="text-sm font-medium text-gray-700">Ukuran Proporsional</span>
+            </div>
+            <p className="text-xs text-gray-600">Semakin besar = semakin banyak paket</p>
+          </div>
+          
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-purple-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="text-lg">📊</div>
+              <span className="text-sm font-medium text-gray-700">Data Real-time</span>
+            </div>
+            <p className="text-xs text-gray-600">Diperbarui secara otomatis</p>
+          </div>
+          
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-orange-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="text-lg">🎯</div>
+              <span className="text-sm font-medium text-gray-700">Interaktif</span>
+            </div>
+            <p className="text-xs text-gray-600">Klik titik untuk detail lengkap</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Map Statistics Card - Outside map for better mobile visibility */}
+      <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 sm:p-6 border border-green-100">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center">
+          <BarChart3 className="w-5 h-5 mr-2 text-green-600" />
+          Statistik Distribusi
+        </h3>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-blue-100 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600 mb-1">
+              {totalPenerima.toLocaleString('id-ID')}
+            </div>
+            <div className="text-xs sm:text-sm text-gray-600">Total Penerima</div>
+          </div>
+          
+          <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-green-100 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-green-600 mb-1">
+              {kabupatenCoverage}
+            </div>
+            <div className="text-xs sm:text-sm text-gray-600">Kabupaten</div>
+          </div>
+          
+          <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-purple-100 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-purple-600 mb-1">
+              {data.length}
+            </div>
+            <div className="text-xs sm:text-sm text-gray-600">Provinsi</div>
+          </div>
+          
+          <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-orange-100 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-orange-600 mb-1">
+              {data.reduce((sum, item) => sum + item.count, 0).toLocaleString('id-ID')}
+            </div>
+            <div className="text-xs sm:text-sm text-gray-600">Total Paket</div>
+          </div>
         </div>
       </div>
 
@@ -776,7 +826,7 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
                     Provinsi
                   </th>
                   <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold uppercase tracking-wide">
-                    Jumlah
+                    Paket Daging
                   </th>
                   <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold uppercase tracking-wide">
                     Persentase
@@ -816,7 +866,7 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
                       <div className="text-sm sm:text-base font-bold text-blue-600">
                         {item.count.toLocaleString('id-ID')}
                       </div>
-                      <div className="text-xs text-gray-500">penerima</div>
+                      <div className="text-xs text-gray-500">paket daging</div>
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-center">
                       <div className="text-sm sm:text-base font-semibold text-green-600">
@@ -839,7 +889,7 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
             </table>
           </div>
           
-          {/* Summary Stats */}
+          {/* Summary Stats - Fixed Contribution Calculation */}
           <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-blue-100 text-center">
               <div className="text-lg sm:text-xl font-bold text-blue-600">
@@ -849,9 +899,9 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
             </div>
             <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-green-100 text-center">
               <div className="text-lg sm:text-xl font-bold text-green-600">
-                {data.slice(0, 5).reduce((sum, item) => sum + item.percentage, 0).toFixed(1)}%
+                {((data.slice(0, 5).reduce((sum, item) => sum + item.count, 0) / data.reduce((sum, item) => sum + item.count, 0)) * 100).toFixed(1)}%
               </div>
-              <div className="text-xs sm:text-sm text-gray-600">% Top 5</div>
+              <div className="text-xs sm:text-sm text-gray-600">% dari Total Paket</div>
             </div>
             <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-purple-100 text-center">
               <div className="text-lg sm:text-xl font-bold text-purple-600">
@@ -861,9 +911,12 @@ const IndonesiaMap: React.FC<IndonesiaMapProps> = ({
             </div>
             <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-orange-100 text-center">
               <div className="text-lg sm:text-xl font-bold text-orange-600">
-                {((data.slice(0, 5).reduce((sum, item) => sum + item.count, 0) / totalPenerima) * 100).toFixed(1)}%
+                {totalDagingPaket > 0 ? 
+                  ((data.slice(0, 5).reduce((sum, item) => sum + item.count, 0) / totalDagingPaket) * 100).toFixed(1) :
+                  ((data.slice(0, 5).reduce((sum, item) => sum + item.count, 0) / data.reduce((sum, item) => sum + item.count, 0)) * 100).toFixed(1)
+                }%
               </div>
-              <div className="text-xs sm:text-sm text-gray-600">Kontribusi</div>
+              <div className="text-xs sm:text-sm text-gray-600">Kontribusi Top 5</div>
             </div>
           </div>
         </div>

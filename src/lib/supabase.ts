@@ -156,11 +156,11 @@ export const saveMuzakkiData = async (records: Muzakki[]): Promise<{ success: nu
         // Safer duplicate check with better error handling
         let isDuplicate = false;
         try {
-          const { data: existing, error: checkError } = await supabase
-            .from(TABLES.MUZAKKI)
-            .select('id')
-            .eq('nama_muzakki', record.nama_muzakki)
-            .eq('telepon', record.telepon || '')
+        const { data: existing, error: checkError } = await supabase
+          .from(TABLES.MUZAKKI)
+          .select('id')
+          .eq('nama_muzakki', record.nama_muzakki)
+          .eq('telepon', record.telepon || '')
             .limit(1); // Add explicit limit to reduce query complexity
 
           if (checkError) {
@@ -248,11 +248,11 @@ export const saveDistribusiData = async (records: Distribusi[]): Promise<{ succe
         // Safer duplicate check with better error handling
         let isDuplicate = false;
         try {
-          const { data: existing, error: checkError } = await supabase
-            .from(TABLES.DISTRIBUSI)
-            .select('id')
-            .eq('nama_penerima', record.nama_penerima)
-            .eq('alamat_penerima', record.alamat_penerima)
+        const { data: existing, error: checkError } = await supabase
+          .from(TABLES.DISTRIBUSI)
+          .select('id')
+          .eq('nama_penerima', record.nama_penerima)
+          .eq('alamat_penerima', record.alamat_penerima)
             .limit(1); // Add explicit limit to reduce query complexity
 
           if (checkError) {

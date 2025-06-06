@@ -271,11 +271,12 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
       console.log(`📊 Fetching basic analytics... ${forceFresh ? '(FORCE FRESH)' : ''}`);
       const cacheBuster = buildQueryWithCacheBuster('distribusi');
       
-      // Get top kabupaten from distribusi with cache-busting - FORCE FRESH EVERY TIME
+      // Get ALL distribusi data with jumlah_daging - FORCE FRESH EVERY TIME
       const { data: distribusiData, error: distribusiError } = await supabase
         .from('distribusi')
-        .select('kabupaten, provinsi, created_at, id')
+        .select('kabupaten, provinsi, created_at, id, jumlah_daging, jenis_hewan')
         .not('kabupaten', 'is', null)
+        .not('provinsi', 'is', null)
         .order('created_at', { ascending: false }) // Force fresh query
         .limit(10000); // Increase limit to get all data
 
@@ -285,46 +286,86 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
       }
 
       console.log(`✅ Retrieved ${distribusiData?.length || 0} distribusi records`);
+      console.log('🗺️ Sample records for provinsi check:', distribusiData?.slice(0, 10).map(d => ({ 
+        provinsi: d.provinsi, 
+        kabupaten: d.kabupaten,
+        jumlah_daging: d.jumlah_daging 
+      })));
 
-      // Process kabupaten data - more accurate calculation
-      const kabupatenCounts: Record<string, number> = {};
-      const provinsiCounts: Record<string, number> = {};
+      // Process kabupaten data - using jumlah_daging sum instead of count
+      const kabupatenCounts: Record<string, { count: number; daging: number }> = {};
+      const provinsiCounts: Record<string, { count: number; daging: number }> = {};
       
       distribusiData?.forEach(item => {
         if (item.kabupaten && item.provinsi) {
           const kabKey = `${item.kabupaten}, ${item.provinsi}`;
-          kabupatenCounts[kabKey] = (kabupatenCounts[kabKey] || 0) + 1;
-          provinsiCounts[item.provinsi] = (provinsiCounts[item.provinsi] || 0) + 1;
+          const dagingAmount = item.jumlah_daging || 1; // Default 1 paket if null
+          
+          if (!kabupatenCounts[kabKey]) {
+            kabupatenCounts[kabKey] = { count: 0, daging: 0 };
+          }
+          if (!provinsiCounts[item.provinsi]) {
+            provinsiCounts[item.provinsi] = { count: 0, daging: 0 };
+          }
+          
+          kabupatenCounts[kabKey].count += 1;
+          kabupatenCounts[kabKey].daging += dagingAmount;
+          provinsiCounts[item.provinsi].count += 1;
+          provinsiCounts[item.provinsi].daging += dagingAmount;
         }
       });
 
-      // Top kabupaten - take top 10 for more accurate representation
+      // Top kabupaten - using daging amount for ranking
       const topKabupaten = Object.entries(kabupatenCounts)
-        .map(([name, count]) => ({ 
+        .map(([name, data]) => ({ 
           name, 
-          penerima: count, 
-          hewan: count // Each distribution = 1 animal portion
+          penerima: data.count, 
+          hewan: data.count, // Each distribution = 1 animal portion
+          daging: data.daging
         }))
-        .sort((a, b) => b.penerima - a.penerima)
-        .slice(0, 10); // Increase to top 10
+        .sort((a, b) => b.daging - a.daging) // Sort by total daging amount
+        .slice(0, 10); // Top 10
 
-      console.log('📊 Top kabupaten calculated:', topKabupaten);
+      console.log('📊 Top kabupaten calculated (by jumlah_daging):', topKabupaten);
 
-      // Provinsi breakdown with colors - more accurate percentages
-      const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#6b7280'];
-      const totalDistribusi = distribusiData?.length || 1;
+      // Provinsi breakdown with colors - using daging amount for calculations
+      const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#a855f7', '#ec4899', '#10b981', '#6366f1'];
+      const totalPenerima = distribusiData?.length || 1;
+      const totalDaging = Object.values(provinsiCounts).reduce((sum, data) => sum + data.daging, 0);
+      
       const provinsiBreakdown = Object.entries(provinsiCounts)
-        .map(([provinsi, count], index) => ({
+        .map(([provinsi, data], index) => ({
           provinsi,
-          count,
-          percentage: Math.round((count / totalDistribusi) * 100),
-          color: colors[index] || '#6b7280'
+          count: data.daging, // Use jumlah_daging instead of count for map markers
+          percentage: Math.round((data.count / totalPenerima) * 100), // Percentage by penerima count
+          color: colors[index] || '#6b7280',
+          total_penerima: data.count,
+          total_daging: data.daging
         }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10); // Increase to top 10
+        .sort((a, b) => b.total_daging - a.total_daging) // Sort by total daging
+        .slice(0, 15); // Increase to show more provinces
 
-      console.log('🗺️ Provinsi breakdown calculated:', provinsiBreakdown);
-      console.log('📍 Nama-nama provinsi dalam data:', provinsiBreakdown.map(p => p.provinsi));
+      console.log('🗺️ Provinsi breakdown calculated (by jumlah_daging):');
+      console.table(provinsiBreakdown.map(p => ({
+        provinsi: p.provinsi,
+        penerima: p.total_penerima,
+        daging_paket: p.total_daging,
+        percentage: p.percentage + '%'
+      })));
+      
+      // Log specific provinces for debugging
+      const foundSumut = provinsiBreakdown.find(p => p.provinsi.toLowerCase().includes('sumatera utara') || p.provinsi.toLowerCase().includes('sumut'));
+      const foundBali = provinsiBreakdown.find(p => p.provinsi.toLowerCase().includes('bali'));
+      const foundNTT = provinsiBreakdown.find(p => p.provinsi.toLowerCase().includes('ntt') || p.provinsi.toLowerCase().includes('nusa tenggara timur'));
+      
+      console.log('🔍 DEBUGGING MISSING PROVINCES:');
+      console.log('   - Sumatera Utara found:', foundSumut ? `YES: ${foundSumut.provinsi} (${foundSumut.total_daging} paket)` : 'NO');
+      console.log('   - Bali found:', foundBali ? `YES: ${foundBali.provinsi} (${foundBali.total_daging} paket)` : 'NO');
+      console.log('   - NTT found:', foundNTT ? `YES: ${foundNTT.provinsi} (${foundNTT.total_daging} paket)` : 'NO');
+      
+      // Show ALL unique province names in data
+      const allProvinces = [...new Set(distribusiData?.map(d => d.provinsi))].sort();
+      console.log('📍 ALL PROVINCES in database:', allProvinces);
 
       // Calculate daily progress from actual data
       const today = new Date();
@@ -360,6 +401,7 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
         provinsi: item.name.split(',')[1]?.trim() || 'Unknown',
         total_penerima: item.penerima,
         total_hewan: item.hewan,
+        total_daging: item.daging,
         active_mitra: ['Various'],
         latest_distribution: new Date().toISOString()
       }));
@@ -400,14 +442,14 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
         if (!uploadError && uploadHistory) {
           console.log(`✅ Fallback: Retrieved ${uploadHistory.length} upload history records`);
           const fallbackActivities: RecentActivity[] = uploadHistory.map((upload: any) => ({
-            id: upload.id,
-            type: 'upload' as 'upload' | 'distribution' | 'registration',
-            description: `${upload.uploaders.mitra_name} mengupload ${upload.file_type} (${upload.successful_records} berhasil${upload.failed_records > 0 ? `, ${upload.failed_records} gagal` : ''})`,
-            timestamp: upload.created_at,
-            mitra: upload.uploaders.mitra_name
-          }));
+          id: upload.id,
+          type: 'upload' as 'upload' | 'distribution' | 'registration',
+          description: `${upload.uploaders.mitra_name} mengupload ${upload.file_type} (${upload.successful_records} berhasil${upload.failed_records > 0 ? `, ${upload.failed_records} gagal` : ''})`,
+          timestamp: upload.created_at,
+          mitra: upload.uploaders.mitra_name
+        }));
 
-          setRecentActivities(fallbackActivities);
+        setRecentActivities(fallbackActivities);
         } else {
           setRecentActivities([]);
         }
@@ -415,7 +457,7 @@ export const useDashboardData = (autoRefresh: boolean = false) => {
       }
 
       console.log(`✅ Retrieved ${activities?.length || 0} activity feed records`);
-      
+
       // Convert to RecentActivity format
       const recentActivities: RecentActivity[] = (activities || []).map((activity: any) => ({
         id: activity.activity_id,

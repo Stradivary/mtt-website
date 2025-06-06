@@ -110,34 +110,34 @@ const QurbanService = () => {
                   </div>
                 ) : (
                   <Link to={service.link} className="block">
-                    <div className={`
-                      relative overflow-hidden rounded-2xl bg-gradient-to-br ${service.color} 
-                      ${service.hoverColor} transition-all duration-300 transform 
-                      hover:scale-105 hover:shadow-2xl shadow-lg
-                    `}>
-                      <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                      
-                      <div className="relative p-8 text-white">
-                        <div className="flex items-center justify-between mb-6">
-                          <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                            <IconComponent className="w-8 h-8" />
-                          </div>
-                          <ArrowRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-300" />
-                        </div>
-                        
-                        <h3 className="text-2xl font-bold mb-4">
-                          {service.title}
-                        </h3>
-                        
-                        <p className="text-white/90 leading-relaxed">
-                          {service.description}
-                        </p>
+                <div className={`
+                  relative overflow-hidden rounded-2xl bg-gradient-to-br ${service.color} 
+                  ${service.hoverColor} transition-all duration-300 transform 
+                  hover:scale-105 hover:shadow-2xl shadow-lg
+                `}>
+                  <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  
+                  <div className="relative p-8 text-white">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                        <IconComponent className="w-8 h-8" />
                       </div>
-                      
-                      {/* Decorative element */}
-                      <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full transform group-hover:scale-110 transition-transform duration-300"></div>
+                      <ArrowRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform duration-300" />
                     </div>
-                  </Link>
+                    
+                    <h3 className="text-2xl font-bold mb-4">
+                      {service.title}
+                    </h3>
+                    
+                    <p className="text-white/90 leading-relaxed">
+                      {service.description}
+                    </p>
+                  </div>
+                  
+                  {/* Decorative element */}
+                  <div className="absolute -bottom-2 -right-2 w-20 h-20 bg-white/10 rounded-full transform group-hover:scale-110 transition-transform duration-300"></div>
+                </div>
+              </Link>
                 )}
               </div>
             );

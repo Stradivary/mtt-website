@@ -73,7 +73,7 @@ const Navbar = () => {
             <div className="bg-white shadow-xl">
               <div className="px-4 py-4 space-y-1">
                 {navLinks.map(({ path, label }) => (
-                  <Link
+              <Link
                     key={path}
                     to={path}
                     className={`block px-4 py-3 rounded-lg transition-all duration-300 touch-manipulation font-medium ${
@@ -83,10 +83,10 @@ const Navbar = () => {
                         ? "bg-gray-50 text-primary hover:bg-primary hover:text-white"
                         : "text-gray-600 hover:text-primary hover:bg-gray-50"
                     }`}
-                    onClick={() => setIsOpen(false)}
-                  >
+                onClick={() => setIsOpen(false)}
+              >
                     {label}
-                  </Link>
+              </Link>
                 ))}
               </div>
               
@@ -96,20 +96,20 @@ const Navbar = () => {
                   Quick Access
                 </div>
                 <div className="space-y-2">
-                  <Link
+              <Link
                     to="/service/qurban/dashboard"
                     className="flex items-center justify-center bg-green-600 text-white px-4 py-3 rounded-full font-semibold hover:bg-green-700 transition-all duration-300 shadow-md touch-manipulation"
-                    onClick={() => setIsOpen(false)}
-                  >
+                onClick={() => setIsOpen(false)}
+              >
                     📊 Dashboard Qurban
-                  </Link>
-                  <Link
+              </Link>
+              <Link
                     to="/service/qurban/dashboard"
                     className="flex items-center justify-center bg-blue-600 text-white px-4 py-3 rounded-full font-semibold hover:bg-blue-700 transition-all duration-300 shadow-md touch-manipulation"
-                    onClick={() => setIsOpen(false)}
-                  >
+                onClick={() => setIsOpen(false)}
+              >
                     🗺️ Pantau Distribusi
-                  </Link>
+              </Link>
                 </div>
                 
                 {/* Registration closed notice */}

@@ -185,13 +185,13 @@ const Upload = () => {
         continue;
       }
       
-      const record: any = {};
+        const record: any = {};
       
       // Map values to headers, handling different column counts
-      headers.forEach((header, index) => {
+        headers.forEach((header, index) => {
         const value = index < values.length ? values[index] : null;
         record[header] = value !== null && value !== undefined && value !== '' ? value : null;
-      });
+        });
       
       // Only add record if it has at least one meaningful field
       const hasRequiredData = (record.nama_muzakki && record.nama_muzakki.trim() !== '') || 
@@ -375,12 +375,12 @@ const Upload = () => {
       } else if (fileExtension === 'csv') {
         console.log('📝 Parsing CSV file...');
         // Read file as text for CSV
-        const text = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
+      const text = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
           reader.onerror = () => reject(new Error('Failed to read CSV file'));
-          reader.readAsText(upload.file);
-        });
+        reader.readAsText(upload.file);
+      });
         
         // First attempt with advanced CSV parser
         records = parseCSV(text);
@@ -453,8 +453,8 @@ const Upload = () => {
 
       if (records.length === 0) {
         updateUploadStatus(upload.id, 'error', 'No valid records found in file. Please check the file format and content.');
-        return;
-      }
+      return;
+    }
 
       updateUploadStatus(upload.id, 'uploading', undefined, 50);
 
@@ -470,7 +470,7 @@ const Upload = () => {
           }
           
           return {
-            uploader_id: uploader.id,
+          uploader_id: uploader.id,
             nama_muzakki: cleanString(record.nama_muzakki) || '',
             email: cleanString(record.email),
             telepon: cleanString(record.telepon),
@@ -478,8 +478,8 @@ const Upload = () => {
             provinsi: cleanString(record.provinsi),
             kabupaten: cleanString(record.kabupaten),
             jenis_hewan: validateJenisHewan(record.jenis_hewan),
-            jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
-            nilai_qurban: parseFloat(record.nilai_qurban) || 0,
+          jumlah_hewan: parseInt(record.jumlah_hewan) || 1,
+          nilai_qurban: parseFloat(record.nilai_qurban) || 0,
             tanggal_penyerahan: convertExcelDate(record.tanggal_penyerahan)
           };
         });
@@ -497,7 +497,7 @@ const Upload = () => {
           
           // Clean and validate data
           const cleanRecord = {
-            uploader_id: uploader.id,
+          uploader_id: uploader.id,
             nama_penerima: cleanString(record.nama_penerima) || '',
             alamat_penerima: cleanString(record.alamat_penerima) || '',
             provinsi: cleanString(record.provinsi),
@@ -893,19 +893,19 @@ const Upload = () => {
                         </div>
                       )}
                       
-                      {upload.result.duplicates > 0 && (
+                        {upload.result.duplicates > 0 && (
                         <div className="flex items-center text-orange-600 mb-1">
                           <AlertCircle className="w-4 h-4 mr-2" />
                           <span>{upload.result.duplicates} record duplikat dilewati</span>
-                        </div>
-                      )}
+                          </div>
+                        )}
                       
-                      {upload.result.errors.length > 0 && (
+                        {upload.result.errors.length > 0 && (
                         <div className="flex items-center text-red-600 mb-1">
                           <X className="w-4 h-4 mr-2" />
                           <span>{upload.result.errors.length} record gagal diproses</span>
-                        </div>
-                      )}
+                          </div>
+                        )}
                       
                       <div className="mt-2 text-xs text-gray-500">
                         File: {upload.file.name} ({(upload.file.size / 1024).toFixed(1)} KB)
