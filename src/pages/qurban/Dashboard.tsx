@@ -228,13 +228,13 @@ const Dashboard = () => {
           </button>
           <button
             onClick={() => window.location.reload()}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs"
+            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs"
           >
             🔄 Page Reload
           </button>
           <button
             onClick={() => console.log({ stats, chartData, animalBreakdown, recentActivities })}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
           >
             📊 Log Data
           </button>
@@ -258,7 +258,7 @@ const Dashboard = () => {
           </p>
           <button
             onClick={handleRefresh}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors touch-manipulation"
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors touch-manipulation"
           >
             Coba Lagi
           </button>
@@ -311,7 +311,7 @@ const Dashboard = () => {
                 {/* Debug toggle */}
                 <button
                   onClick={() => setDebugMode(!debugMode)}
-                  className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors touch-manipulation"
+                  className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 hover:bg-red-200 transition-colors touch-manipulation"
                   title="Toggle debug mode"
                 >
                   🐛
@@ -322,7 +322,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-center space-x-2 sm:space-x-3">
               <button
                 onClick={handleExportData}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
               >
                   <Download className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Export</span>
@@ -331,7 +331,7 @@ const Dashboard = () => {
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                  className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
+                  className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
               >
                   <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -339,7 +339,7 @@ const Dashboard = () => {
 
                 <button
                   onClick={handleHardRefresh}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 touch-manipulation text-xs sm:text-sm"
                   title="Clear cache and force refresh"
                 >
                   <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -392,38 +392,31 @@ const Dashboard = () => {
                 Ringkasan Cepat
               </h3>
               
-            {/* Mobile optimized grid - 2 columns on mobile, 5 on larger screens */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
-              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-blue-50 rounded-md sm:rounded-lg">
-                <span className="text-sm sm:text-base lg:text-lg font-bold text-blue-600">
+            {/* Mobile optimized grid - 2 columns on mobile, 4 on larger screens (removed Total Paket) */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-red-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-red-600">
                     {stats?.total_muzakki || 0}
                   </span>
                 <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Total Pequrban</span>
               </div>
-              
-              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-green-50 rounded-md sm:rounded-lg">
-                <span className="text-sm sm:text-base lg:text-lg font-bold text-green-600">
-                  {Math.round(totalDagingPaket)}
-                </span>
-                <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Total Paket</span>
-                </div>
                 
-              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-purple-50 rounded-md sm:rounded-lg">
-                <span className="text-sm sm:text-base lg:text-lg font-bold text-purple-600">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-red-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-red-600">
                   {stats?.kabupaten_coverage || 0}
                   </span>
                 <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Kab/Kota</span>
                 </div>
                 
-              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-orange-50 rounded-md sm:rounded-lg">
-                <span className="text-sm sm:text-base lg:text-lg font-bold text-orange-600">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-red-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-red-600">
                   {Math.round(chartData?.provinsiBreakdown?.reduce((sum, item) => sum + (item.total_daging || item.count || 0), 0) || 0)}
                   </span>
                 <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Paket Distribusi</span>
                 </div>
                 
-              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-indigo-50 rounded-md sm:rounded-lg col-span-2 sm:col-span-1">
-                <span className="text-sm sm:text-base lg:text-lg font-bold text-indigo-600">
+              <div className="flex flex-col items-center justify-center p-2 sm:p-3 bg-red-50 rounded-md sm:rounded-lg">
+                <span className="text-sm sm:text-base lg:text-lg font-bold text-red-600">
                   {mitraCount || 0}
                   </span>
                 <span className="text-xs sm:text-sm text-gray-700 font-medium text-center leading-tight">Total Mitra</span>

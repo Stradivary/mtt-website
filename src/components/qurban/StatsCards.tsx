@@ -71,45 +71,45 @@ const StatsCards: React.FC<StatsCardsProps> = ({
       value: stats?.total_muzakki?.toLocaleString('id-ID') || '0',
       subtitle: 'Donatur',
       icon: Users,
-      color: 'from-blue-500 to-blue-600',
-      textColor: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      color: 'from-red-500 to-red-600',
+      textColor: 'text-red-600',
+      bgColor: 'bg-red-50'
     },
     {
       title: 'Total Penerima',
       value: Math.round(totalDagingPaket).toLocaleString('id-ID') || '0',
       subtitle: 'Paket',
       icon: Target,
-      color: 'from-green-500 to-green-600',
-      textColor: 'text-green-600',
-      bgColor: 'bg-green-50'
+      color: 'from-red-600 to-red-700',
+      textColor: 'text-red-700',
+      bgColor: 'bg-red-50'
     },
     {
       title: 'Total Nilai Qurban',
       value: formatCurrency(stats?.total_nilai_qurban || 0),
       subtitle: 'Terkumpul',
       icon: TrendingUp,
-      color: 'from-emerald-500 to-emerald-600',
-      textColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50'
+      color: 'from-red-700 to-red-800',
+      textColor: 'text-red-800',
+      bgColor: 'bg-red-50'
     },
     {
       title: 'Sebaran Wilayah',
       value: stats?.kabupaten_coverage?.toString() || '0',
       subtitle: 'Kabupaten',
       icon: MapPin,
-      color: 'from-purple-500 to-purple-600',
-      textColor: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      color: 'from-red-400 to-red-500',
+      textColor: 'text-red-500',
+      bgColor: 'bg-red-50'
     },
     {
       title: 'Total Mitra',
       value: mitraCount?.toLocaleString('id-ID') || '0',
       subtitle: 'Partner',
       icon: Target,
-      color: 'from-indigo-500 to-indigo-600',
-      textColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-50'
+      color: 'from-red-800 to-red-900',
+      textColor: 'text-red-900',
+      bgColor: 'bg-red-50'
     }
   ];
 
@@ -161,8 +161,8 @@ const StatsCards: React.FC<StatsCardsProps> = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
-        {[...Array(5)].map((_, index) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
+        {[...Array(6)].map((_, index) => (
           <div key={index} className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6">
             <div className="animate-pulse">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -180,7 +180,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
       {/* Main Stats Cards */}
       {cards.map((card, index) => (
         <div
@@ -205,22 +205,22 @@ const StatsCards: React.FC<StatsCardsProps> = ({
         </div>
       ))}
 
-      {/* Animal Breakdown Card - Mobile optimized */}
+      {/* Animal Breakdown Card - Mobile optimized with better space utilization */}
       {orderedAnimals.length > 0 && (
-        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300">
+        <div className="bg-white rounded-lg sm:rounded-xl shadow-lg border border-gray-200 p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 col-span-1 sm:col-span-2 md:col-span-1 xl:col-span-1">
           {/* Content */}
           <div className="space-y-2 sm:space-y-3">
             <h3 className="text-xs sm:text-sm font-medium text-gray-600 mb-3 sm:mb-4">Jenis Hewan Qurban</h3>
-            <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {orderedAnimals.map(({ jenis, count }) => (
                 <div key={jenis} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="flex items-center justify-center w-8 h-8 sm:w-12 sm:h-12 lg:w-16 lg:h-16">
+                  <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                    <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 flex-shrink-0">
                       {getAnimalIcon(jenis)}
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-gray-700">{getAnimalDisplayName(jenis)}</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">{getAnimalDisplayName(jenis)}</span>
                   </div>
-                  <span className="text-lg sm:text-2xl lg:text-4xl font-bold text-gray-900">{count}</span>
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex-shrink-0 ml-2">{count}</span>
                 </div>
               ))}
             </div>

@@ -197,9 +197,6 @@ const DistributionTable: React.FC<DistributionTableProps> = ({
             <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-500" />
             Distribusi per Kabupaten
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Summary distribusi qurban berdasarkan wilayah kabupaten/kota ({filteredData.length} dari {data.length} kabupaten)
-          </p>
         </div>
 
         {/* Controls */}
@@ -225,28 +222,6 @@ const DistributionTable: React.FC<DistributionTableProps> = ({
               <option key={provinsi} value={provinsi}>{provinsi}</option>
             ))}
           </select>
-        </div>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div className="bg-blue-50 rounded-lg p-3 sm:p-4 text-center">
-          <div className="text-xl sm:text-2xl font-bold text-blue-600">
-            {filteredData.reduce((sum, item) => sum + item.total_penerima, 0)}
-          </div>
-          <div className="text-xs sm:text-sm text-gray-600">Total Penerima</div>
-        </div>
-        <div className="bg-green-50 rounded-lg p-3 sm:p-4 text-center">
-          <div className="text-xl sm:text-2xl font-bold text-green-600">
-            {filteredData.reduce((sum, item) => sum + item.total_hewan, 0)}
-          </div>
-          <div className="text-xs sm:text-sm text-gray-600">Total Hewan</div>
-        </div>
-        <div className="bg-purple-50 rounded-lg p-3 sm:p-4 text-center">
-          <div className="text-lg font-bold text-emerald-600">
-            {filteredData.reduce((sum, item) => sum + item.total_daging, 0).toFixed(1)} paket
-          </div>
-          <div className="text-sm text-gray-600">Total Daging</div>
         </div>
       </div>
 
